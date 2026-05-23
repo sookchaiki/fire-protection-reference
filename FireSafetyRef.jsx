@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Search, Flag, ChevronRight, AlertTriangle, X, FileText, SlidersHorizontal, ArrowUpDown, Layers, Clock, TrendingUp, ExternalLink, WifiOff, Calendar, Ship, BookOpen, CalendarClock, ShieldAlert, Info } from "lucide-react";
+import { Search, Flag, ChevronRight, AlertTriangle, X, FileText, SlidersHorizontal, ArrowUpDown, Layers, Clock, TrendingUp, ExternalLink, WifiOff, Calendar, Ship, BookOpen, CalendarClock, ShieldAlert, Info, Building2 } from "lucide-react";
 
 // ============================================================================
 //  SOLAS II-2/14.2.2 — Fire Protection Maintenance, Testing & Inspection
@@ -17,11 +17,18 @@ import { Search, Flag, ChevronRight, AlertTriangle, X, FileText, SlidersHorizont
 //    MAJOR = redesign / breaking change to structure (e.g. 1.x -> 2.0.0)
 //  The version shows in the header and footer of the app automatically.
 // ----------------------------------------------------------------------------
-const VERSION = "1.13.1";
+const VERSION = "1.15.5";
 const BUILD_DATE = "23/05/2026"; // dd/mm/yyyy
 const COPYRIGHT_YEAR = "2026";
 const COPYRIGHT_HOLDER = "Kittipong Sookchai";
 const CHANGELOG = [
+  { v: "1.15.5", d: "23/05/2026", note: "IACS Rec.88 citations (EEBD cylinder hydrostatic test) now link to the IACS recommendation page." },
+  { v: "1.15.4", d: "23/05/2026", note: "Planner: the \u2018Approved Service Supplier\u2019 badge is now clickable and opens the Approved Supplier Search tab." },
+  { v: "1.15.3", d: "23/05/2026", note: "Renamed the \u2018Suppliers\u2019 tab to \u2018Approved Supplier Search\u2019." },
+  { v: "1.15.2", d: "23/05/2026", note: "Supplier Lookup: updated ABS badge colour to #E21E2D and DNV to #009639." },
+  { v: "1.15.1", d: "23/05/2026", note: "Supplier Lookup: each Classification Society badge now uses its brand colour, with automatic black/white text for legibility on light brand colours." },
+  { v: "1.15.0", d: "23/05/2026", note: "Inspection Planner: added ship-type applicability filter, expandable reference-detail panels (SOLAS/MSC/FSS/interpretation + interval basis), an \u2018Approved Service Supplier\u2019 badge and supplier-only filter, and quick-access buttons (Find LR Approved Firm / Open Supplier Lookup). Added a Find LR Approved Firm action to the Reference tab. Extended the item data model accordingly." },
+  { v: "1.14.0", d: "23/05/2026", note: "Added \u2018Suppliers\u2019 tab \u2014 Approved Service Supplier Lookup: searchable cards linking to 12 Classification Society approved-supplier databases (LR pinned first, rest alphabetical by abbreviation)." },
   { v: "1.13.1", d: "23/05/2026", note: "Footer Source instruments: the instrument number itself is now the link (PDF label removed)." },
   { v: "1.13.0", d: "23/05/2026", note: "Added professional copyright footer, a Legal tab (Terms of Use & Disclaimer), copyright/author/noarchive metadata, and frontend-protection notes. All Rights Reserved." },
   { v: "1.12.0", d: "23/05/2026", note: "Reference rows now show related alerts as a single collapsible \u2018N related alerts\u2019 toggle (collapsed by default, expand to view and click through), keeping rows clean." },
@@ -259,8 +266,8 @@ const SOURCE_DOCS = [
 ];
 
 // Map a row citation (e.g. "1432 §7.3", "A.951(23) §9.1", "1318R1 §5",
-// "1432 §7.5 / 1516") to the PDF URL of the leading instrument it cites.
-// Returns null when no linkable instrument is recognised (e.g. "IACS Rec.88").
+// "1432 §7.5 / 1516", "IACS Rec.88") to the source URL of the leading
+// instrument it cites. Returns null when no linkable instrument is recognised.
 function srcUrl(srcStr) {
   if (!srcStr) return null;
   const map = {};
@@ -271,6 +278,7 @@ function srcUrl(srcStr) {
   if (/^1516/.test(srcStr))         return map["1516"] || null;
   if (/^1312/.test(srcStr))         return map["1312"] || null;
   if (/^1432/.test(srcStr))         return map["1432"] || null;
+  if (/^IACS Rec\.?88/i.test(srcStr)) return "https://iacs.org.uk/resolutions/recommendations/81-100/rec-88-rev1-cln";
   return null;
 }
 
@@ -746,45 +754,66 @@ const ivColor = (i) => ({
 // `cat` (category) and `m` (medium id) drive the planner filters.
 const MILESTONE_ITEMS = [
   // ----- Annual (recur every 1 yr from delivery) -----
-  { equipment: "Portable fire extinguisher inspection", m: "portable", cat: "Annual", intervalYears: 1, src: "A.951(23) §9.1" },
-  { equipment: "Wheeled extinguisher periodical inspection", m: "portable", cat: "Annual", intervalYears: 1, src: "1432 §7.12" },
-  { equipment: "Fixed gas system annual inspection", m: "gas", cat: "Annual", intervalYears: 1, src: "1432 §7.3" },
-  { equipment: "CO\u2082 system annual inspection", m: "gas", cat: "Annual", intervalYears: 1, src: "1318R1 §5" },
-  { equipment: "Fire detection & alarm annual test", m: "detection", cat: "Annual", intervalYears: 1, src: "1432 §7.2" },
-  { equipment: "Foam system functional test", m: "foam", cat: "Annual", intervalYears: 1, src: "1432 §7.4" },
-  { equipment: "Water mist/spray/sprinkler annual test", m: "water", cat: "Annual", intervalYears: 1, src: "1432 §7.5 / 1516" },
-  { equipment: "Breathing apparatus annual check", m: "ba", cat: "Annual", intervalYears: 1, src: "1432 §7.8" },
-  { equipment: "Dry powder system annual inspection", m: "powder", cat: "Annual", intervalYears: 1, src: "1432 §7.9" },
+  { equipment: "Portable fire extinguisher inspection", m: "portable", cat: "Annual", intervalYears: 1, src: "A.951(23) §9.1", applicableShipTypes: ["all"], requiresApprovedSupplier: false, serviceSupplierNotes: "Normally ship staff — annual verification.", solasReference: "II-2/14.2.2", mscReference: "—", fssReference: "Ch. 4", interpretationNotes: "Hydrostatic interval subject to flag/Class." },
+  { equipment: "Wheeled extinguisher periodical inspection", m: "portable", cat: "Annual", intervalYears: 1, src: "1432 §7.12", applicableShipTypes: ["all"], requiresApprovedSupplier: false, serviceSupplierNotes: "Ship staff routine inspection.", solasReference: "II-2/14.2.2", mscReference: "§7.12", fssReference: "Ch. 4", interpretationNotes: "" },
+  { equipment: "Fixed gas system annual inspection", m: "gas", cat: "Annual", intervalYears: 1, src: "1432 §7.3", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Annual inspection normally by an approved service supplier.", solasReference: "II-2/14.2.2", mscReference: "§7.3", fssReference: "Ch. 5", interpretationNotes: "" },
+  { equipment: "CO\u2082 system annual inspection", m: "gas", cat: "Annual", intervalYears: 1, src: "1318R1 §5", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Annual CO₂ system check normally by an approved service supplier.", solasReference: "II-2/14.2.2", mscReference: "§5 (1318/Rev.1)", fssReference: "Ch. 5", interpretationNotes: "Per MSC.1/Circ.1318/Rev.1." },
+  { equipment: "Fire detection & alarm annual test", m: "detection", cat: "Annual", intervalYears: 1, src: "1432 §7.2", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Functional testing often by an approved service supplier or maker.", solasReference: "II-2/7", mscReference: "§7.2", fssReference: "Ch. 9", interpretationNotes: "" },
+  { equipment: "Foam system functional test", m: "foam", cat: "Annual", intervalYears: 1, src: "1432 §7.4", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Functional test typically with approved service supplier attendance.", solasReference: "II-2/10", mscReference: "§7.4", fssReference: "Ch. 6/14", interpretationNotes: "" },
+  { equipment: "Water mist/spray/sprinkler annual test", m: "water", cat: "Annual", intervalYears: 1, src: "1432 §7.5 / 1516", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Annual test often by approved service supplier; see MSC.1/Circ.1516.", solasReference: "II-2/10", mscReference: "§7.5", fssReference: "Ch. 7/8", interpretationNotes: "In-service testing per MSC.1/Circ.1516." },
+  { equipment: "Breathing apparatus annual check", m: "ba", cat: "Annual", intervalYears: 1, src: "1432 §7.8", applicableShipTypes: ["all"], requiresApprovedSupplier: false, serviceSupplierNotes: "Routine check by ship staff; cylinder testing by approved facility.", solasReference: "II-2/10", mscReference: "§7.8", fssReference: "Ch. 3", interpretationNotes: "" },
+  { equipment: "Dry powder system annual inspection", m: "powder", cat: "Annual", intervalYears: 1, src: "1432 §7.9", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Annual inspection normally by an approved service supplier.", solasReference: "II-2/10", mscReference: "§7.9", fssReference: "Ch. 6", interpretationNotes: "" },
   // Foam concentrate analysis: first test within 3 yrs of supply, annually after.
-  { equipment: "Foam concentrate analysis", m: "foam", cat: "Foam", initialIntervalYears: 3, recurringIntervalYears: 1, src: "1312 §4\u20135" },
+  { equipment: "Foam concentrate analysis", m: "foam", cat: "Foam", initialIntervalYears: 3, recurringIntervalYears: 1, src: "1312 §4\u20135", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Periodical analysis by an approved laboratory / service supplier.", solasReference: "II-2/10", mscReference: "§4-5 (1312)", fssReference: "Ch. 14", interpretationNotes: "Per MSC.1/Circ.1312; first test within 3 yrs, then annually." },
 
   // ----- 2-Year -----
-  { equipment: "Fixed gas cylinder weighing (>95% charge)", m: "gas", cat: "Hydrostatic / cylinder", intervalYears: 2, src: "1432 §8.1" },
-  { equipment: "CO\u2082 cylinder content verification", m: "gas", cat: "CO\u2082", intervalYears: 2, src: "1318R1 §6.1" },
-  { equipment: "Dry powder 2-yearly test & pipe blow-through", m: "powder", cat: "2-Year", intervalYears: 2, src: "1432 §8.2" },
-  { equipment: "Water mist pressure-cylinder weighing", m: "water", cat: "2-Year", intervalYears: 2, src: "1432 §8.1 (cyl.)" },
+  { equipment: "Fixed gas cylinder weighing (>95% charge)", m: "gas", cat: "Hydrostatic / cylinder", intervalYears: 2, src: "1432 §8.1", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Cylinder content check normally by an approved service supplier.", solasReference: "II-2/14.2.2", mscReference: "§8.1", fssReference: "Ch. 5", interpretationNotes: "" },
+  { equipment: "CO\u2082 cylinder content verification", m: "gas", cat: "CO\u2082", intervalYears: 2, src: "1318R1 §6.1", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Content verification by an approved service supplier (weigh / level).", solasReference: "II-2/14.2.2", mscReference: "§6.1 (1318/Rev.1)", fssReference: "Ch. 5", interpretationNotes: "Refill if <90/95%; per MSC.1/Circ.1318/Rev.1." },
+  { equipment: "Dry powder 2-yearly test & pipe blow-through", m: "powder", cat: "2-Year", intervalYears: 2, src: "1432 §8.2", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "2-yearly test normally by an approved service supplier.", solasReference: "II-2/10", mscReference: "§8.2", fssReference: "Ch. 6", interpretationNotes: "" },
+  { equipment: "Water mist pressure-cylinder weighing", m: "water", cat: "2-Year", intervalYears: 2, src: "1432 §8.1 (cyl.)", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Pressure-cylinder check normally by approved service supplier.", solasReference: "II-2/10", mscReference: "§8.1", fssReference: "Ch. 7", interpretationNotes: "" },
 
   // ----- 5-Year -----
-  { equipment: "Foam system internal valve inspection", m: "foam", cat: "5-Year", intervalYears: 5, src: "1432 §9.2" },
-  { equipment: "Fixed gas internal valve inspection", m: "gas", cat: "5-Year", intervalYears: 5, src: "1432 §9.1" },
-  { equipment: "CO\u2082 control-valve internal inspection", m: "gas", cat: "CO\u2082", intervalYears: 5, src: "1318R1 §7" },
-  { equipment: "SCBA cylinder hydrostatic test", m: "ba", cat: "Hydrostatic / cylinder", intervalYears: 5, src: "1432 §9.4" },
-  { equipment: "EEBD cylinder hydrostatic test", m: "ba", cat: "Hydrostatic / cylinder", intervalYears: 5, src: "IACS Rec.88" },
-  { equipment: "Low-location lighting luminance test", m: "lighting", cat: "5-Year", intervalYears: 5, src: "1432 §9.5" },
-  { equipment: "Water mist control/section valve internal inspection", m: "water", cat: "5-Year", intervalYears: 5, src: "1432 §9.3 / 1516 §9.3" },
-  { equipment: "Portable extinguisher test-discharge (sample)", m: "portable", cat: "5-Year", intervalYears: 5, src: "A.951(23) §9.1.1" },
+  { equipment: "Foam system internal valve inspection", m: "foam", cat: "5-Year", intervalYears: 5, src: "1432 §9.2", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "5-yearly internal inspection normally by approved service supplier.", solasReference: "II-2/10", mscReference: "§9.2", fssReference: "Ch. 6/14", interpretationNotes: "" },
+  { equipment: "Fixed gas internal valve inspection", m: "gas", cat: "5-Year", intervalYears: 5, src: "1432 §9.1", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "5-yearly internal valve inspection by approved service supplier.", solasReference: "II-2/14.2.2", mscReference: "§9.1", fssReference: "Ch. 5", interpretationNotes: "" },
+  { equipment: "CO\u2082 control-valve internal inspection", m: "gas", cat: "CO\u2082", intervalYears: 5, src: "1318R1 §7", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Control-valve internal inspection by approved service supplier.", solasReference: "II-2/14.2.2", mscReference: "§7 (1318/Rev.1)", fssReference: "Ch. 5", interpretationNotes: "Per MSC.1/Circ.1318/Rev.1." },
+  { equipment: "SCBA cylinder hydrostatic test", m: "ba", cat: "Hydrostatic / cylinder", intervalYears: 5, src: "1432 §9.4", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Hydrostatic test by an approved testing facility.", solasReference: "II-2/10", mscReference: "§9.4", fssReference: "Ch. 3", interpretationNotes: "" },
+  { equipment: "EEBD cylinder hydrostatic test", m: "ba", cat: "Hydrostatic / cylinder", intervalYears: 5, src: "IACS Rec.88", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Hydrostatic test by an approved testing facility.", solasReference: "II-2/13", mscReference: "—", fssReference: "Ch. 3", interpretationNotes: "Interval per IACS Rec.88 / maker." },
+  { equipment: "Low-location lighting luminance test", m: "lighting", cat: "5-Year", intervalYears: 5, src: "1432 §9.5", applicableShipTypes: ["all"], requiresApprovedSupplier: false, serviceSupplierNotes: "Photoluminescent/electrical LLL check; staff or supplier.", solasReference: "II-2/13", mscReference: "§9.5", fssReference: "Ch. 11", interpretationNotes: "" },
+  { equipment: "Water mist control/section valve internal inspection", m: "water", cat: "5-Year", intervalYears: 5, src: "1432 §9.3 / 1516 §9.3", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Internal inspection normally by approved service supplier.", solasReference: "II-2/10", mscReference: "§9.3", fssReference: "Ch. 7/8", interpretationNotes: "Per MSC.1/Circ.1516 §9.3." },
+  { equipment: "Portable extinguisher test-discharge (sample)", m: "portable", cat: "5-Year", intervalYears: 5, src: "A.951(23) §9.1.1", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Test-discharge & recharge by an approved service supplier.", solasReference: "II-2/14.2.2", mscReference: "—", fssReference: "Ch. 4", interpretationNotes: "Per resolution A.951(23)." },
 
   // ----- 10-Year -----
-  { equipment: "Fixed gas cylinder hydrostatic test (10%)", m: "gas", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "1432 §10.1" },
-  { equipment: "CO\u2082 HP cylinder hydrostatic test", m: "gas", cat: "CO\u2082", intervalYears: 10, src: "1318R1 §6.1.2", note: "Special regime: ALL cylinders tested before the 20th anniversary and every 10 yrs thereafter (1318R1)." },
-  { equipment: "Dry powder vessel hydrostatic / NDT", m: "powder", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "1432 §10.3" },
-  { equipment: "Water mist gas/water pressure-cylinder hydrostatic test", m: "water", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "1432 §10.2" },
-  { equipment: "Portable extinguisher hydraulic test", m: "portable", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "A.951(23) §9.1.2" },
-  { equipment: "Wheeled extinguisher hydrostatic test", m: "portable", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "1432 §10.5" },
-  { equipment: "Aerosol generator renewal", m: "aerosol", cat: "10-Year", intervalYears: 10, src: "1432 §10.4" },
+  { equipment: "Fixed gas cylinder hydrostatic test (10%)", m: "gas", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "1432 §10.1", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Hydrostatic test of cylinders by an approved facility.", solasReference: "II-2/14.2.2", mscReference: "§10.1", fssReference: "Ch. 5", interpretationNotes: "10% sample at 10 yrs (see circular)." },
+  { equipment: "CO\u2082 HP cylinder hydrostatic test", m: "gas", cat: "CO\u2082", intervalYears: 10, src: "1318R1 §6.1.2", note: "Special regime: ALL cylinders tested before the 20th anniversary and every 10 yrs thereafter (1318R1).", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "HP cylinder hydrostatic test by an approved facility.", solasReference: "II-2/14.2.2", mscReference: "§6.1.2 (1318/Rev.1)", fssReference: "Ch. 5", interpretationNotes: "All cylinders before 20th anniversary, then every 10 yrs." },
+  { equipment: "Dry powder vessel hydrostatic / NDT", m: "powder", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "1432 §10.3", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Vessel hydrostatic / NDT by an approved facility.", solasReference: "II-2/10", mscReference: "§10.3", fssReference: "Ch. 6", interpretationNotes: "" },
+  { equipment: "Water mist gas/water pressure-cylinder hydrostatic test", m: "water", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "1432 §10.2", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Pressure-cylinder hydrostatic test by an approved facility.", solasReference: "II-2/10", mscReference: "§10.2", fssReference: "Ch. 7", interpretationNotes: "" },
+  { equipment: "Portable extinguisher hydraulic test", m: "portable", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "A.951(23) §9.1.2", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Hydraulic (hydrostatic) test by an approved service supplier.", solasReference: "II-2/14.2.2", mscReference: "—", fssReference: "Ch. 4", interpretationNotes: "Per resolution A.951(23)." },
+  { equipment: "Wheeled extinguisher hydrostatic test", m: "portable", cat: "Hydrostatic / cylinder", intervalYears: 10, src: "1432 §10.5", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Hydrostatic test by an approved service supplier.", solasReference: "II-2/14.2.2", mscReference: "§10.5", fssReference: "Ch. 4", interpretationNotes: "" },
+  { equipment: "Aerosol generator renewal", m: "aerosol", cat: "10-Year", intervalYears: 10, src: "1432 §10.4", applicableShipTypes: ["all"], requiresApprovedSupplier: true, serviceSupplierNotes: "Generator renewal by maker / approved service supplier.", solasReference: "II-2/10", mscReference: "§10.4", fssReference: "Ch. 6", interpretationNotes: "" },
 ];
 
 // Planner filter buckets (id -> predicate over an item). Easy to extend.
+// Vessel types for the planner applicability filter. "all" matches everything.
+// Items carry applicableShipTypes: ["all"] or a list of these ids.
+const SHIP_TYPES = [
+  { id: "all", label: "All ships" },
+  { id: "bulk", label: "Bulk carrier" },
+  { id: "oil", label: "Oil tanker" },
+  { id: "chem", label: "Chemical tanker" },
+  { id: "gas", label: "Gas carrier (LNG/LPG)" },
+  { id: "container", label: "Container ship" },
+  { id: "roro", label: "RoRo" },
+  { id: "passenger", label: "Passenger ship" },
+  { id: "offshore", label: "Offshore vessel" },
+];
+
+// Does an item apply to the selected ship type? "all" on either side matches.
+function appliesToShipType(item, shipType) {
+  if (shipType === "all") return true;
+  const list = item.applicableShipTypes || ["all"];
+  return list.includes("all") || list.includes(shipType);
+}
+
 const PLANNER_FILTERS = [
   { id: "all", label: "All", test: () => true },
   { id: "annual", label: "Annual", test: it => it.cat === "Annual" || effInterval(it) === 1 },
@@ -1254,6 +1283,125 @@ function ApprovalButton({ mediumId, label, online }) {
 //  Wording is intentionally professional and cautious, not hostile. This is
 //  boilerplate for a reference tool, not legal advice.
 // ===========================================================================
+// ===========================================================================
+//  APPROVED SERVICE SUPPLIER LOOKUP
+//  ---------------------------------------------------------------------------
+//  Directory of Classification Society Approved Service Supplier databases.
+//  LR is always pinned first; the rest are sorted alphabetically by
+//  abbreviation. To add a society: append to CLASS_SOCIETIES (it will sort
+//  automatically, except LR which is force-pinned to the top).
+// ===========================================================================
+const CLASS_SOCIETIES = [
+  { abbr: "LR",  name: "Lloyd\u2019s Register", pinned: true, color: "#04AA9E",
+    url: "https://www.lr.org/en/services/classification-certification/materials-equipment-components-product-certification/lr-approvals/" },
+  { abbr: "ABS", name: "American Bureau of Shipping", color: "#E21E2D",
+    url: "https://www.eagle.org/ABSEaglePrograms/es/es-search.jsp" },
+  { abbr: "BV",  name: "Bureau Veritas", color: "#8A8A8A",
+    url: "https://approvalexplorer.bureauveritas.com/#/home" },
+  { abbr: "CCS", name: "China Classification Society", color: "#003A70",
+    url: "https://www.ccs-service.net/supplier/showCcsSuClient" },
+  { abbr: "CRS", name: "Croatian Register of Shipping", color: "#294999",
+    url: "https://www.crs.hr/approvals-finder/approved-service-suppliers" },
+  { abbr: "DNV", name: "DNV", color: "#009639",
+    url: "https://approvalfinder.dnv.com/?filterMode=current" },
+  { abbr: "IRS", name: "Indian Register of Shipping", color: "#D9B949",
+    url: "https://www.irclass.org/marine/statutory-survey/dgs-approved-service-suppliers/" },
+  { abbr: "KR",  name: "Korean Register", color: "#0096D6",
+    url: "https://e-mesis.krs.co.kr/KeyService/Supplier/En/WKS_CorpAddress_List.aspx" },
+  { abbr: "NK",  name: "Nippon Kaiji Kyokai (ClassNK)", color: "#2775BE",
+    url: "https://www.classnk.or.jp/appr_list/service_search.aspx?lang=en" },
+  { abbr: "PRS", name: "Polski Rejestr Statk\u00f3w", color: "#E3E3E3",
+    url: "https://prs.pl/en/maritime-sector/approvals/" },
+  { abbr: "RINA", name: "RINA", color: "#000000",
+    url: "https://servicesuppliers.rina.org/integration" },
+  { abbr: "TL",  name: "T\u00fcrk Loydu", color: "#3049C7",
+    url: "https://www.turkloydu.org/en-us/our-services/customer-tools/approved-company-and-product-list/approved-service-supplier-list/" },
+];
+
+// LR pinned first, then alphabetical by abbreviation.
+function sortedSocieties() {
+  const pinned = CLASS_SOCIETIES.filter(s => s.pinned);
+  const rest = CLASS_SOCIETIES.filter(s => !s.pinned).sort((a, b) => a.abbr.localeCompare(b.abbr));
+  return [...pinned, ...rest];
+}
+
+// Pick black/white text for legibility on a given brand background colour.
+function readableText(hex) {
+  const h = (hex || "").replace("#", "");
+  if (h.length !== 6) return "#fff";
+  const r = parseInt(h.slice(0, 2), 16), g = parseInt(h.slice(2, 4), 16), b = parseInt(h.slice(4, 6), 16);
+  // relative luminance (sRGB approximation)
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? "#1a2230" : "#fff";
+}
+
+function ClassSocietyLookup({ online }) {
+  const [q, setQ] = useState("");
+  const all = useMemo(() => sortedSocieties(), []);
+  const query = q.trim().toLowerCase();
+  const shown = query
+    ? all.filter(s => s.name.toLowerCase().includes(query) || s.abbr.toLowerCase().includes(query))
+    : all;
+
+  return (
+    <div className="css-lookup">
+      <p className="css-intro">
+        Direct links to the Approved Service Supplier databases of major Classification Societies.
+        Use these to confirm a supplier&rsquo;s approval scope and validity.
+      </p>
+
+      <div className="alerts-search css-search">
+        <Search size={16} />
+        <input value={q} onChange={e => setQ(e.target.value)}
+          placeholder="Search society name or abbreviation — e.g. DNV, ClassNK, Bureau" aria-label="Search classification societies" />
+        {q && <button className="clr" onClick={() => setQ("")} aria-label="Clear search"><X size={15} /></button>}
+      </div>
+
+      <div className="css-grid">
+        {shown.map(s => {
+          const card = (
+            <>
+              <span className="css-initials" aria-hidden="true"
+                style={{ background: s.color, color: readableText(s.color), border: readableText(s.color) === "#1a2230" ? "1px solid rgba(0,0,0,.12)" : "none" }}>{s.abbr}</span>
+              <span className="css-body">
+                <span className="css-name">{s.name} <span className="css-abbr">({s.abbr})</span></span>
+                <span className="css-cat">Approved Service Supplier Database</span>
+              </span>
+              {s.pinned && <span className="css-pin" title="Pinned">{"\u2605"}</span>}
+              {online && <ExternalLink size={15} className="css-ext" />}
+            </>
+          );
+          return online ? (
+            <a key={s.abbr} className={`css-card${s.pinned ? " css-card-pinned" : ""}`}
+               href={s.url} target="_blank" rel="noopener noreferrer"
+               title={`Open ${s.name} Approved Service Supplier database`}>
+              {card}
+            </a>
+          ) : (
+            <div key={s.abbr} className={`css-card css-card-off${s.pinned ? " css-card-pinned" : ""}`}
+                 title="Internet connection required.">
+              {card}
+              <span className="css-off">offline</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {shown.length === 0 && (
+        <div className="alerts-empty">
+          <Search size={22} />
+          <p>No society matches.</p>
+          <button onClick={() => setQ("")}>Clear search</button>
+        </div>
+      )}
+
+      <p className="css-note">
+        <Info size={13} /> Users should always verify the latest approval validity directly from the respective Classification Society database.
+      </p>
+    </div>
+  );
+}
+
 function LegalView({ onBack }) {
   return (
     <div className="legal">
@@ -1471,11 +1619,14 @@ function SafetyAlerts({ mediumLabel, online, targetId, onTargetConsumed }) {
 //  Self-contained: build-date input, optional per-item last-completed
 //  overrides, status filter, and the ranked due-items list.
 // ===========================================================================
-function SurveyPlanner({ mediumLabel }) {
+function SurveyPlanner({ mediumLabel, online, onOpenSuppliers }) {
   const [buildInput, setBuildInput] = useState("");      // yyyy-mm-dd from date picker
   const [planFilter, setPlanFilter] = useState("all");
+  const [shipType, setShipType] = useState("all");
+  const [supplierOnly, setSupplierOnly] = useState(false);
   const [overrides, setOverrides] = useState({});        // equipment -> yyyy-mm-dd
   const [showOverrides, setShowOverrides] = useState(false);
+  const [expanded, setExpanded] = useState(null);        // equipment name of open detail panel
 
   const now = new Date();
   const buildDate = useMemo(() => parseDMY(buildInput), [buildInput]);
@@ -1490,13 +1641,45 @@ function SurveyPlanner({ mediumLabel }) {
   }, [buildDate, overrides]);
 
   const filterFn = PLANNER_FILTERS.find(f => f.id === planFilter)?.test || (() => true);
-  const filteredPlan = plan ? plan.filter(r => filterFn(r.item)) : [];
+  // category filter + ship-type applicability + optional supplier-only filter
+  const itemPasses = (it) =>
+    filterFn(it) && appliesToShipType(it, shipType) && (!supplierOnly || it.requiresApprovedSupplier);
+  const filteredPlan = plan ? plan.filter(r => itemPasses(r.item)) : [];
 
   // group by status, preserving sort order
   const byStatus = {};
   for (const r of filteredPlan) (byStatus[r.status] = byStatus[r.status] || []).push(r);
 
   const setOverride = (eq, val) => setOverrides(o => ({ ...o, [eq]: val }));
+  const toggleExpand = (eq) => setExpanded(x => x === eq ? null : eq);
+
+  // Reference detail panel for one item.
+  const DetailPanel = ({ item }) => (
+    <div className="pl-detail">
+      <div className="pl-detail-grid">
+        <div className="pl-ref"><span className="pl-ref-lbl">SOLAS</span><span className="pl-ref-val">{item.solasReference || "\u2014"}</span></div>
+        <div className="pl-ref"><span className="pl-ref-lbl">MSC.1/Circ.1432</span><span className="pl-ref-val">{item.mscReference || "\u2014"}</span></div>
+        <div className="pl-ref"><span className="pl-ref-lbl">FSS Code</span><span className="pl-ref-val">{item.fssReference || "\u2014"}</span></div>
+        <div className="pl-ref"><span className="pl-ref-lbl">Testing interval</span><span className="pl-ref-val">{item.cat}{effInterval(item) ? ` \u00b7 ${effInterval(item)}-year cycle` : ""}</span></div>
+      </div>
+      {item.interpretationNotes ? <p className="pl-detail-note"><strong>Interpretation:</strong> {item.interpretationNotes}</p> : null}
+      <p className="pl-detail-note"><strong>Service supplier:</strong> {item.serviceSupplierNotes || (item.requiresApprovedSupplier ? "Normally requires an approved service supplier." : "Normally ship staff.")}</p>
+      {item.requiresApprovedSupplier && (
+        <div className="pl-detail-actions">
+          {online ? (
+            <a className="pl-act pl-act-primary" href={LR_APPROVALS_URL} target="_blank" rel="noopener noreferrer">
+              <ExternalLink size={13} /> Find LR Approved Firm
+            </a>
+          ) : (
+            <span className="pl-act pl-act-off"><WifiOff size={13} /> Find LR Approved Firm (offline)</span>
+          )}
+          <button className="pl-act" onClick={onOpenSuppliers}>
+            <Building2 size={13} /> Open Approved Service Supplier Lookup
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className="planner">
@@ -1506,6 +1689,12 @@ function SurveyPlanner({ mediumLabel }) {
           <label><Ship size={13} /> Ship build date</label>
           <input type="date" value={buildInput} max={new Date().toISOString().slice(0, 10)}
             onChange={e => setBuildInput(e.target.value)} />
+        </div>
+        <div className="pl-field">
+          <label><Ship size={13} /> Ship type</label>
+          <select value={shipType} onChange={e => setShipType(e.target.value)}>
+            {SHIP_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+          </select>
         </div>
         {buildDate && (
           <div className="pl-age">
@@ -1532,13 +1721,19 @@ function SurveyPlanner({ mediumLabel }) {
             <span>Planning aid only. Dates are projected from the build date assuming on-schedule cycles. Enter a last-completed date for any item to correct its projection. Always confirm against survey records and the flag Administration.</span>
           </div>
 
-          {/* filters */}
+          {/* category filters */}
           <div className="pl-filters">
             {PLANNER_FILTERS.map(f => (
               <button key={f.id} className={`pl-chip${planFilter === f.id ? " on" : ""}`}
                 onClick={() => setPlanFilter(f.id)}>{f.label}</button>
             ))}
           </div>
+
+          {/* supplier-only toggle */}
+          <label className="pl-supfilter">
+            <input type="checkbox" checked={supplierOnly} onChange={e => setSupplierOnly(e.target.checked)} />
+            Show only items normally requiring an Approved Service Supplier
+          </label>
 
           {/* status groups */}
           {["OVERDUE", "DUE", "UPCOMING", "NOTYET"].map(st => {
@@ -1553,30 +1748,44 @@ function SurveyPlanner({ mediumLabel }) {
                   <span className="pl-n" style={{ background: meta.color }}>{rows.length}</span>
                 </div>
                 <div className="pl-rows">
-                  {rows.map((r, i) => (
-                    <div key={r.item.equipment + i} className="pl-row"
-                      style={{ background: meta.bg, borderColor: meta.bd }}>
-                      <div className="pl-row-main">
-                        <span className="pl-eq">{r.item.equipment}</span>
-                        <span className="pl-meta">
-                          <span className="pl-tag">{mediumLabel(r.item.m)}</span>
-                          <span className="pl-src">{r.item.src}</span>
-                        </span>
-                        {r.item.note && <span className="pl-special"><AlertTriangle size={10} /> {r.item.note}</span>}
+                  {rows.map((r, i) => {
+                    const open = expanded === r.item.equipment;
+                    return (
+                    <div key={r.item.equipment + i} className="pl-row-wrap">
+                      <div className="pl-row" style={{ background: meta.bg, borderColor: meta.bd }}>
+                        <div className="pl-row-main">
+                          <span className="pl-eq">{r.item.equipment}</span>
+                          <span className="pl-meta">
+                            <span className="pl-tag">{mediumLabel(r.item.m)}</span>
+                            <span className="pl-src">{r.item.src}</span>
+                            {r.item.requiresApprovedSupplier && (
+                              <button className="pl-supbadge pl-supbadge-link" onClick={onOpenSuppliers}
+                                title="This item normally requires attendance by an approved service supplier. Click to open Approved Supplier Search.">
+                                Approved Service Supplier <ExternalLink size={9} />
+                              </button>
+                            )}
+                          </span>
+                          {r.item.note && <span className="pl-special"><AlertTriangle size={10} /> {r.item.note}</span>}
+                          <button className="pl-more" onClick={() => toggleExpand(r.item.equipment)} aria-expanded={open}>
+                            <ChevronRight size={12} className={open ? "rot" : ""} /> {open ? "Hide details" : "More details"}
+                          </button>
+                        </div>
+                        <div className="pl-due" style={{ color: meta.color }}>
+                          <span className="pl-due-lbl">next due</span>
+                          <strong>{fmtDMY(r.nextDue)}</strong>
+                        </div>
                       </div>
-                      <div className="pl-due" style={{ color: meta.color }}>
-                        <span className="pl-due-lbl">next due</span>
-                        <strong>{fmtDMY(r.nextDue)}</strong>
-                      </div>
+                      {open && <DetailPanel item={r.item} />}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             );
           })}
 
           {filteredPlan.length === 0 && (
-            <div className="pl-empty">No items in this filter.</div>
+            <div className="pl-empty">No items match the current filters.</div>
           )}
 
           {/* Optional: last-completed overrides */}
@@ -1588,7 +1797,7 @@ function SurveyPlanner({ mediumLabel }) {
             {showOverrides && (
               <div className="pl-ov-body">
                 <p className="pl-ov-help">Enter the date each item was last carried out to correct its next-due projection. Leave blank to use the theoretical cycle from build date.</p>
-                {MILESTONE_ITEMS.filter(it => filterFn(it)).map(it => (
+                {MILESTONE_ITEMS.filter(itemPasses).map(it => (
                   <div key={it.equipment} className="pl-ov-row">
                     <span>{it.equipment}</span>
                     <input type="date" max={new Date().toISOString().slice(0, 10)}
@@ -1715,6 +1924,9 @@ export default function App() {
           <button className={view === "alerts" ? "on" : ""} onClick={() => setView("alerts")}>
             <ShieldAlert size={14} /> Alerts
           </button>
+          <button className={view === "suppliers" ? "on" : ""} onClick={() => setView("suppliers")}>
+            <Building2 size={14} /> Approved Supplier Search
+          </button>
           <button className={view === "planner" ? "on" : ""} onClick={() => setView("planner")}>
             <CalendarClock size={14} /> Inspection Planner
           </button>
@@ -1829,7 +2041,7 @@ export default function App() {
         </main>
       ) : view === "planner" ? (
         <main className="main">
-          <SurveyPlanner mediumLabel={mediumLabel} />
+          <SurveyPlanner mediumLabel={mediumLabel} online={online} onOpenSuppliers={() => setView("suppliers")} />
           <footer className="ftr">
             <p className="disclaimer"><strong>Disclaimer:</strong> The inspection planner is a scheduling aid that projects periodic maintenance, testing & inspection cycles from the vessel build date (or the last-completed dates you provide). It does not account for actual survey windows, flag-specific harmonisation, manufacturer instructions, or works already carried out unless entered. Always confirm against the ship&rsquo;s survey records and the flag Administration&rsquo;s requirements.</p>
             <DevCredit online={online} onLegal={() => setView("legal")} />
@@ -1843,12 +2055,28 @@ export default function App() {
             <DevCredit online={online} onLegal={() => setView("legal")} />
           </footer>
         </main>
+      ) : view === "suppliers" ? (
+        <main className="main">
+          <ClassSocietyLookup online={online} />
+          <footer className="ftr">
+            <DevCredit online={online} onLegal={() => setView("legal")} />
+          </footer>
+        </main>
       ) : (
       <main className="main">
         <div className="result-bar">
           <span><strong>{filtered.length}</strong> {filtered.length === 1 ? "item" : "items"}</span>
           {hasQuery && filtered.length > 0 && <span className="rb-rank">ranked by relevance</span>}
           {flag !== "imo" && <span className="rb-flag"><Flag size={12} /> {flagObj.name}<em>{flagObj.circ}</em></span>}
+          <span className="rb-spacer" />
+          {online ? (
+            <a className="rb-lr" href={LR_APPROVALS_URL} target="_blank" rel="noopener noreferrer"
+               title="Open the LR Approved Firm / Service Supplier database">
+              <ExternalLink size={12} /> Find LR Approved Firm
+            </a>
+          ) : (
+            <span className="rb-lr rb-lr-off"><WifiOff size={12} /> Find LR Approved Firm (offline)</span>
+          )}
         </div>
 
         {/* Approved-firm context bar: shown when one system is selected */}
@@ -2057,6 +2285,33 @@ const CSS = `
 
   /* alerts search + filters */
   .alerts-search{display:flex;align-items:center;gap:9px;background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:0 12px;height:42px;margin-bottom:12px;max-width:520px}
+
+  /* Approved Service Supplier Lookup */
+  .css-lookup{max-width:900px}
+  .css-intro{font-size:13px;line-height:1.55;color:var(--ink-2);margin-bottom:16px;max-width:620px}
+  .css-search{max-width:520px;margin-bottom:18px}
+  .css-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
+  .css-card{display:flex;align-items:center;gap:13px;text-decoration:none;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:.15s;position:relative}
+  .css-card:hover{border-color:var(--accent-2);box-shadow:0 3px 12px rgba(26,34,48,.09);transform:translateY(-1px)}
+  .css-card-pinned{border-color:#cfe5e0;background:#f6fbfa}
+  .css-card-pinned:hover{border-color:#04AA9E}
+  .css-initials{display:flex;align-items:center;justify-content:center;flex-shrink:0;width:46px;height:46px;border-radius:10px;background:var(--accent-2);color:#fff;font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:700;letter-spacing:-.02em}
+  .css-card-pinned .css-initials{background:#04AA9E}
+  .css-body{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
+  .css-name{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.3}
+  .css-abbr{color:var(--ink-3);font-weight:500}
+  .css-cat{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--ink-3)}
+  .css-ext{color:var(--ink-3);flex-shrink:0}
+  .css-card:hover .css-ext{color:var(--accent-2)}
+  .css-pin{position:absolute;top:9px;right:10px;color:#04AA9E;font-size:12px}
+  .css-card-off{cursor:not-allowed;opacity:.65}
+  .css-card-off:hover{border-color:var(--line);box-shadow:none;transform:none}
+  .css-off{font-size:10px;font-weight:600;color:var(--ink-3);text-transform:uppercase}
+  .css-note{display:flex;align-items:flex-start;gap:7px;margin-top:20px;font-size:12px;line-height:1.5;color:var(--ink-3);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:11px 14px}
+  .css-note svg{flex-shrink:0;margin-top:1px;color:var(--accent-2)}
+  @media(max-width:680px){
+    .css-grid{grid-template-columns:1fr}
+  }
   .alerts-search:focus-within{border-color:var(--accent-2);background:#fff;box-shadow:0 0 0 3px rgba(44,82,130,.1)}
   .alerts-search svg{color:var(--ink-3);flex-shrink:0}
   .alerts-search input{flex:1;border:0;background:0;font-family:inherit;font-size:14px;color:var(--ink);height:100%}
@@ -2107,6 +2362,40 @@ const CSS = `
   .pl-tag{font-size:10.5px;font-weight:600;color:var(--ink-2);background:rgba(0,0,0,.05);padding:2px 8px;border-radius:5px}
   .pl-src{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-3)}
   .pl-special{display:flex;align-items:flex-start;gap:5px;margin-top:7px;font-size:11px;line-height:1.4;color:#92400e}
+  .pl-field select{font-family:inherit;font-size:14px;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:9px;padding:9px 12px;cursor:pointer}
+  .pl-field select:focus{outline:0;border-color:var(--accent-2)}
+  .pl-supfilter{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);margin-bottom:18px;cursor:pointer}
+  .pl-supfilter input{width:15px;height:15px;cursor:pointer;accent-color:var(--accent-2)}
+  .pl-supbadge{font-size:10px;font-weight:600;color:#0e7490;background:#ecfeff;border:1px solid #a5f3fc;padding:2px 8px;border-radius:5px;white-space:nowrap}
+  .pl-supbadge-link{display:inline-flex;align-items:center;gap:4px;font-family:inherit;cursor:pointer;transition:.12s}
+  .pl-supbadge-link:hover{background:#cffafe;border-color:#67e8f9}
+  .pl-supbadge-link svg{flex-shrink:0}
+  .pl-row-wrap{display:flex;flex-direction:column}
+  .pl-more{display:inline-flex;align-items:center;gap:4px;margin-top:9px;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--accent-2);background:0;border:0;padding:0;cursor:pointer;align-self:flex-start}
+  .pl-more svg{transition:transform .15s}
+  .pl-more svg.rot{transform:rotate(90deg)}
+  .pl-detail{background:var(--paper);border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;margin:-6px 0 0;padding:14px 16px 16px}
+  .pl-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
+  .pl-ref{display:flex;flex-direction:column;gap:2px}
+  .pl-ref-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3)}
+  .pl-ref-val{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;color:var(--accent-2)}
+  .pl-detail-note{font-size:12px;line-height:1.5;color:var(--ink-2);margin-bottom:8px}
+  .pl-detail-note strong{color:var(--ink)}
+  .pl-detail-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .pl-act{display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:12px;font-weight:600;color:var(--accent-2);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;text-decoration:none;transition:.12s}
+  .pl-act:hover{border-color:var(--accent-2);background:#ebf2fa}
+  .pl-act-primary{color:#fff;background:#04AA9E;border-color:#04AA9E}
+  .pl-act-primary:hover{background:#038a80;border-color:#038a80}
+  .pl-act-off{color:var(--ink-3);background:#eef0f2;cursor:not-allowed}
+  .pl-act-off:hover{border-color:var(--line);background:#eef0f2}
+  .rb-spacer{flex:1}
+  .rb-lr{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--accent-2);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 11px;transition:.12s;white-space:nowrap}
+  .rb-lr:hover{border-color:var(--accent-2);background:#ebf2fa}
+  .rb-lr-off{color:var(--ink-3);border-color:var(--line);cursor:not-allowed}
+  @media(max-width:680px){
+    .rb-spacer{display:none}
+    .rb-lr{width:100%;justify-content:center;margin-top:4px}
+  }
   .pl-special svg{flex-shrink:0;margin-top:2px}
   .pl-due{display:flex;flex-direction:column;align-items:flex-end;gap:1px;white-space:nowrap}
   .pl-due-lbl{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
