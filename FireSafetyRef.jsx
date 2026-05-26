@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Search, Flag, ChevronRight, AlertTriangle, X, FileText, SlidersHorizontal, ArrowUpDown, Layers, Clock, TrendingUp, ExternalLink, WifiOff, Calendar, Ship, BookOpen, CalendarClock, ShieldAlert, Info, Building2 } from "lucide-react";
+import { Search, Flag, ChevronRight, AlertTriangle, X, FileText, SlidersHorizontal, ArrowUpDown, Layers, Clock, TrendingUp, ExternalLink, WifiOff, Calendar, Ship, BookOpen, CalendarClock, ShieldAlert, Info, Building2, Moon, Sun } from "lucide-react";
 
 // ============================================================================
 //  SOLAS II-2/14.2.2 — Fire Protection Maintenance, Testing & Inspection
@@ -10,18 +10,28 @@ import { Search, Flag, ChevronRight, AlertTriangle, X, FileText, SlidersHorizont
 // ============================================================================
 
 // ----------------------------------------------------------------------------
-//  VERSION  — bump VERSION + BUILD_DATE on every change, and add a CHANGELOG line.
+//  VERSION  — bump VERSION + BUILD_DATE (to the ACTUAL current date) on every change, and add a CHANGELOG line.
 //  Semantic versioning: MAJOR.MINOR.PATCH
 //    PATCH = data fix / wording / single-flag update (e.g. 1.1.0 -> 1.1.1)
 //    MINOR = new content set or feature (e.g. 1.1.x -> 1.2.0)
 //    MAJOR = redesign / breaking change to structure (e.g. 1.x -> 2.0.0)
 //  The version shows in the header and footer of the app automatically.
 // ----------------------------------------------------------------------------
-const VERSION = "1.18.0";
-const BUILD_DATE = "23/05/2026"; // dd/mm/yyyy
+const VERSION = "1.24.0";
+const BUILD_DATE = "26/05/2026"; // dd/mm/yyyy
 const COPYRIGHT_YEAR = "2026";
 const COPYRIGHT_HOLDER = "Kittipong Sookchai";
 const CHANGELOG = [
+  { v: "1.24.0", d: "26/05/2026", note: "Added 5 Gard alerts: fire-safety overview (recurring PSC deficiencies), and case studies on engine-room fire + fixed-system failure (container ship), lube-oil filter fire (bulk carrier), effective CO\u2082 use (UK MAIB), and the engine-room fire-prevention Loss Prevention Circular." },
+  { v: "1.23.0", d: "26/05/2026", note: "Added Alert: IMO FSI 20 lessons learned \u2014 crew-accommodation fires (combustible construction, prohibited cabin heaters, non-working extinguishers/hoses, EEBDs & escape marking). Only the fire-safety cases from the source were included." },
+  { v: "1.22.0", d: "26/05/2026", note: "Added a dark-mode toggle (moon/sun) in the header for low-glare night/bridge use; theme runs through CSS variables." },
+  { v: "1.21.0", d: "26/05/2026", note: "Added Alert: Hong Kong MD \u2014 PSC detainable deficiencies for blocked discharge nozzles of fixed fire-fighting systems (SOLAS II-2/14.2.1.2; inspect nozzle cleanliness before port calls). Source: Hong Kong Marine Department letter, 3 Feb 2023." },
+  { v: "1.20.1", d: "26/05/2026", note: "Alerts: added a one-click \u2018Clear (N)\u2019 button that resets all active filters, matching the Reference tab." },
+  { v: "1.20.0", d: "26/05/2026", note: "Added Alert: engine-room fire BSAFE case study (Britannia P&I, FERNANDA) \u2014 lessons on fixed-system boundary closure (two dampers left open), machinery-space manning, and fixed-system effectiveness." },
+  { v: "1.19.3", d: "26/05/2026", note: "Renamed the \u2018Approved Supplier Search\u2019 tab to \u2018Approved Service Supplier\u2019 and removed its search box (only 12 societies)." },
+  { v: "1.19.2", d: "26/05/2026", note: "Corrected the build date and recent changelog dates to the actual update date. New versions are now stamped with the current date." },
+  { v: "1.19.1", d: "26/05/2026", note: "Alerts: renamed the \u2018Class Society\u2019 filter to \u2018Source\u2019 (LR pinned first); the PSC filter now selects by Memorandum of Understanding (Paris MoU, Tokyo MoU, etc.); PSC cards show their MoU(s)." },
+  { v: "1.19.0", d: "26/05/2026", note: "Alerts: added Flag, Class Society (issuing body), and PSC filters; each alert now shows source / flag / PSC chips. Tagged all 45 alerts with flag, source and PSC metadata." },
   { v: "1.18.0", d: "23/05/2026", note: "Added 16 ClassNK Technical Information alerts (flag-specific requirements): fire-fighter radios/communication (Malaysia, Liberia, Cook Islands, Greece), Fire Control Plan symbols (Panama, Cook Islands, Malta), BA/SCBA spare-cylinder recharging (UK/Red Ensign, SVG, Antigua, Singapore, Bahamas), paint-locker extinguishing (Marshall Is.), EEBDs (Cyprus), boiler-space 135 L extinguisher exemption (MSC.409(97)), and spare charges/extinguishers (Panama)." },
   { v: "1.17.0", d: "23/05/2026", note: "Added Alert: documenting PFOS-free fire-extinguishing foam on board \u2014 verification at first safety-equipment survey after 01/01/2026, three documentation routes (maker declaration / accredited lab test <10 mg/kg / TA-MED certificate), traceability. Source: DNV Technical & Regulatory News, 4 May 2026." },
   { v: "1.16.0", d: "23/05/2026", note: "Added Alert: DNV \u2014 deficiencies in CO\u2082 fire-extinguishing systems (depleted cylinders from incorrect ultrasonic level gauging and copper bursting-disc fatigue on pre-2016 NK Co. systems). Source: DNV Technical & Regulatory News, 23 Oct 2025." },
@@ -298,6 +308,9 @@ const SAFETY_ADVISORIES = [
     id: "pfos",
     status: "active",
     date: "01/01/2026",
+    flag: "IMO / General",
+    source: "IMO",
+    psc: false,
     kind: "regulation",
     title: "PFOS prohibited in fire-extinguishing media",
     media: ["foam", "portable"],
@@ -318,6 +331,9 @@ const SAFETY_ADVISORIES = [
     id: "roro-fire-2026",
     status: "active",
     date: "01/04/2026",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     kind: "regulation",
     title: "Fire safety amendments for Ro-Ro, passenger & cargo ships",
     media: ["detection", "water", "structural"],
@@ -338,6 +354,9 @@ const SAFETY_ADVISORIES = [
     id: "ondeck-container-fire",
     status: "active",
     date: "03/02/2015",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     kind: "regulation",
     title: "On-deck container fire protection \u2014 water mist lance & mobile monitors",
     media: ["water", "portable"],
@@ -356,6 +375,9 @@ const SAFETY_ADVISORIES = [
     id: "co2-release",
     status: "active",
     date: "01/01/2018",
+    flag: "IMO / General",
+    source: "MAIB",
+    psc: false,
     kind: "safety",
     title: "Unintended CO\u2082 release \u2014 maintenance of fixed CO\u2082 systems",
     media: ["gas"],
@@ -375,6 +397,9 @@ const SAFETY_ADVISORIES = [
     id: "co2-level-indicator",
     status: "active",
     date: "01/01/2025",
+    flag: "IMO / General",
+    source: "General",
+    psc: false,
     kind: "recommendation",
     title: "CO\u2082 cylinder content check by level indicator \u2014 temperature limit",
     media: ["gas"],
@@ -392,6 +417,10 @@ const SAFETY_ADVISORIES = [
     id: "psc-fire-cic-2023",
     status: "historical",
     date: "29/08/2023",
+    flag: "IMO / General",
+    source: "LR",
+    psc: true,
+    mou: ["Paris MoU", "Tokyo MoU", "Black Sea MoU", "Acuerdo Vi\u00f1a del Mar"],
     kind: "safety",
     title: "Port State Control \u2014 Fire Safety Concentrated Inspection Campaign",
     media: ["detection", "water", "foam", "gas", "powder", "portable", "ba", "structural"],
@@ -412,6 +441,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-06-13", status: "active",
     date: "01/01/2013", kind: "regulation",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "Revised IMO guidelines for maintenance & inspection of fire protection systems",
     media: ["detection", "water", "foam", "gas", "powder", "portable", "ba", "structural"],
     effective: null,
@@ -426,6 +458,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-18-14", status: "active",
     date: "01/07/2014", kind: "regulation",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "2014 amendments to SOLAS and the FSS Code",
     media: ["detection", "water", "foam", "gas", "structural"],
     effective: "01/07/2014",
@@ -440,6 +475,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-43-16", status: "active",
     date: "01/01/2016", kind: "regulation",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "Fire-fighting medium weights in lightweight / lightship condition",
     media: ["gas", "powder", "foam", "water"],
     effective: null,
@@ -454,6 +492,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-20-16", status: "active",
     date: "01/01/2016", kind: "regulation",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "Revised guidelines for in-service testing of sprinkler & water mist systems",
     media: ["water"],
     effective: null,
@@ -468,6 +509,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-39-17", status: "active",
     date: "01/01/2017", kind: "regulation",
+    flag: "Bahamas",
+    source: "LR",
+    psc: false,
     title: "Bahamas \u2014 early implementation of SOLAS II-2/1 & 10 amendments",
     media: ["portable", "foam"],
     effective: null,
@@ -482,6 +526,10 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-24-18", status: "historical",
     date: "01/01/2018", kind: "safety",
+    flag: "IMO / General",
+    source: "LR",
+    psc: true,
+    mou: ["Riyadh MoU", "Indian Ocean MoU", "Abuja MoU"],
     title: "PSC CIC \u2014 Emergency Systems & Procedures (escape routes & markings)",
     media: ["structural", "lighting"],
     effective: null,
@@ -496,6 +544,10 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-29-14", status: "historical",
     date: "01/09/2014", kind: "safety",
+    flag: "IMO / General",
+    source: "LR",
+    psc: true,
+    mou: ["Caribbean MoU"],
     title: "Caribbean MoU \u2014 Port State Control inspection campaign (2014)",
     media: ["detection", "water", "foam", "gas", "portable", "ba"],
     effective: null,
@@ -510,6 +562,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-03-18", status: "active",
     date: "01/01/2018", kind: "safety",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "Kidde safety bulletin \u2014 cylinder replacement (HFC227 / Novec 1230)",
     media: ["gas"],
     effective: null,
@@ -524,6 +579,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-04-18", status: "active",
     date: "01/01/2018", kind: "safety",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "Cosmo Co. fire doors \u2014 quality defect notice",
     media: ["structural"],
     effective: null,
@@ -538,6 +596,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-19-23", status: "active",
     date: "01/01/2023", kind: "safety",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "Safety notice \u2014 NK Co. Ltd CO\u2082 system cylinders",
     media: ["gas"],
     effective: null,
@@ -552,6 +613,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-23-23", status: "active",
     date: "01/01/2023", kind: "safety",
+    flag: "EU",
+    source: "LR",
+    psc: false,
     title: "Safety recall \u2014 AWG fire hose nozzles",
     media: ["water", "portable"],
     effective: null,
@@ -566,6 +630,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-14-14", status: "active",
     date: "01/01/2014", kind: "safety",
+    flag: "United States",
+    source: "LR",
+    psc: false,
     title: "USCG \u2014 operational readiness of local application water spray systems",
     media: ["water"],
     effective: null,
@@ -580,6 +647,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-03-15", status: "active",
     date: "01/01/2015", kind: "safety",
+    flag: "United States",
+    source: "LR",
+    psc: false,
     title: "USCG detentions \u2014 water mist system deficiencies (update)",
     media: ["water"],
     effective: null,
@@ -594,6 +664,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-35-13", status: "active",
     date: "01/01/2013", kind: "safety",
+    flag: "United States",
+    source: "LR",
+    psc: false,
     title: "USCG detentions \u2014 inoperative water mist systems",
     media: ["water"],
     effective: null,
@@ -608,6 +681,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-11-23", status: "active",
     date: "01/01/2023", kind: "safety",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "Engine-room safety \u2014 pipe compression fittings & fire prevention",
     media: ["structural"],
     effective: null,
@@ -622,6 +698,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-06-25", status: "active",
     date: "01/01/2025", kind: "regulation",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "Engine-room means of escape arrangements",
     media: ["structural", "lighting"],
     effective: null,
@@ -636,6 +715,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-19-19", status: "active",
     date: "01/01/2019", kind: "safety",
+    flag: "Norway",
+    source: "LR",
+    psc: false,
     title: "Mitigating lithium battery system fires",
     media: ["detection", "water"],
     effective: null,
@@ -650,6 +732,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-19-15", status: "active",
     date: "01/01/2015", kind: "regulation",
+    flag: "Norway",
+    source: "LR",
+    psc: false,
     title: "Norway NMA Reg. 227 \u2014 fire & explosion on mobile offshore units",
     media: ["detection", "water", "foam", "gas", "structural"],
     effective: null,
@@ -664,6 +749,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-15-19", status: "active",
     date: "01/01/2019", kind: "regulation",
+    flag: "China",
+    source: "LR",
+    psc: false,
     title: "China \u2014 control & monitoring of service suppliers",
     media: ["portable", "foam", "gas", "water", "detection", "ba"],
     effective: null,
@@ -678,6 +766,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-01-20", status: "active",
     date: "01/01/2020", kind: "regulation",
+    flag: "China",
+    source: "LR",
+    psc: false,
     title: "China \u2014 service supplier requirements (update)",
     media: ["portable", "foam", "gas", "water", "detection", "ba"],
     effective: null,
@@ -692,6 +783,9 @@ const SAFETY_ADVISORIES = [
   {
     id: "cn-26-15", status: "active",
     date: "01/01/2016", kind: "regulation",
+    flag: "IMO / General",
+    source: "LR",
+    psc: false,
     title: "Means of escape from machinery spaces \u2014 SOLAS II-2/13.4",
     media: ["structural"],
     effective: "01/01/2016",
@@ -709,6 +803,9 @@ const SAFETY_ADVISORIES = [
     id: "dnv-co2-deficiencies",
     status: "active",
     date: "23/10/2025",
+    flag: "Marshall Islands",
+    source: "DNV",
+    psc: false,
     kind: "safety",
     title: "Deficiencies in CO\u2082 fire-extinguishing systems \u2014 depleted cylinders",
     media: ["gas"],
@@ -728,6 +825,9 @@ const SAFETY_ADVISORIES = [
     id: "dnv-pfos-documentation",
     status: "active",
     date: "04/05/2026",
+    flag: "IMO / General",
+    source: "DNV",
+    psc: false,
     kind: "regulation",
     title: "Documenting PFOS-free fire-extinguishing foam on board",
     media: ["foam", "portable"],
@@ -748,6 +848,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1318",
     status: "active",
     date: "26/02/2024",
+    flag: "Marshall Islands",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Fire-extinguishing arrangement for paint & flammable-liquid lockers — Marshall Islands",
     media: ["portable", "gas", "powder", "water"],
@@ -765,6 +868,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1280",
     status: "active",
     date: "09/12/2022",
+    flag: "Panama",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Fire Control Plan graphical symbols & verification — Panama",
     media: ["structural"],
@@ -781,6 +887,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1256",
     status: "active",
     date: "08/02/2022",
+    flag: "Cyprus",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Emergency escape breathing devices (EEBDs) — Cyprus",
     media: ["ba"],
@@ -798,6 +907,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1232",
     status: "active",
     date: "20/04/2021",
+    flag: "Malaysia",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Portable radio apparatus for fire-fighting parties — Malaysia",
     media: ["ba", "detection"],
@@ -815,6 +927,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1213",
     status: "active",
     date: "04/11/2020",
+    flag: "Liberia",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Portable radios for fire-fighting parties — Liberia",
     media: ["ba"],
@@ -832,6 +947,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1181",
     status: "active",
     date: "19/04/2019",
+    flag: "Cook Islands",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Graphical symbols for Fire Control Plans — Cook Islands",
     media: ["structural"],
@@ -848,6 +966,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1178",
     status: "active",
     date: "19/03/2019",
+    flag: "Cook Islands",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Two-way portable radios for fire-fighter communication — Cook Islands",
     media: ["ba"],
@@ -865,6 +986,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1176",
     status: "active",
     date: "22/02/2019",
+    flag: "Malta",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Graphical symbols for Fire Control Plans — Malta",
     media: ["structural"],
@@ -882,6 +1006,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1168",
     status: "active",
     date: "27/12/2018",
+    flag: "Greece",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Fire-fighter communication — Greece",
     media: ["ba"],
@@ -899,6 +1026,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1152",
     status: "active",
     date: "18/05/2018",
+    flag: "IMO / General",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Exemption of 135 L foam extinguisher in boiler spaces — MSC.409(97)",
     media: ["portable", "foam"],
@@ -916,6 +1046,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1027",
     status: "active",
     date: "22/05/2015",
+    flag: "UK / Red Ensign",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Recharging of breathing-apparatus & spare cylinders — UK / Red Ensign group",
     media: ["ba"],
@@ -932,6 +1065,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1020",
     status: "active",
     date: "23/01/2015",
+    flag: "St. Vincent & the Grenadines",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Recharging of breathing-apparatus & spare cylinders — St. Vincent & the Grenadines",
     media: ["ba"],
@@ -947,6 +1083,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1016",
     status: "active",
     date: "26/12/2014",
+    flag: "Panama",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Spare charges, additional extinguishers & refilling — Panama",
     media: ["portable"],
@@ -964,6 +1103,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1011",
     status: "active",
     date: "05/11/2014",
+    flag: "Antigua & Barbuda",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Fire-fighter's outfit equipment — Antigua & Barbuda",
     media: ["ba"],
@@ -981,6 +1123,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1009",
     status: "active",
     date: "21/10/2014",
+    flag: "Singapore",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Recharging of breathing-apparatus & spare cylinders — Singapore",
     media: ["ba"],
@@ -997,6 +1142,9 @@ const SAFETY_ADVISORIES = [
     id: "tec-1008",
     status: "active",
     date: "10/10/2014",
+    flag: "Bahamas",
+    source: "ClassNK",
+    psc: false,
     kind: "regulation",
     title: "Recharging of breathing-apparatus & spare cylinders — Bahamas",
     media: ["ba"],
@@ -1008,6 +1156,176 @@ const SAFETY_ADVISORIES = [
     ],
     refs: "Bahamas flag requirement. Source: ClassNK Technical Information No. TEC-1008 (10 Oct 2014).",
     link: "https://www.classnk.or.jp/hp/pdf/tech_info/tech_img/T1008e.pdf",
+  },
+  {
+    id: "britannia-er-fire",
+    status: "active",
+    date: "25/08/2021",
+    flag: "IMO / General",
+    source: "Britannia P&I",
+    psc: false,
+    kind: "safety",
+    title: "Engine-room fire \u2014 BSAFE incident case study (Britannia P&I)",
+    media: ["detection", "gas", "structural"],
+    effective: null,
+    summary: "Britannia P&I BSAFE case study of an engine-room fire on the Ro-Ro ship FERNANDA. The fire probably started in the main switchboard and spread rapidly upward through open accesses to the funnel, crew accommodation, navigating bridge and an upper tween-deck cargo space. The fixed halon system failed to extinguish it. A useful lesson on boundary closure, manning and fixed-system effectiveness.",
+    points: [
+      "Two fire dampers were left open when the engine room was being closed down for the fixed (halon) system to operate \u2014 incomplete boundary closure let the fire breathe and the agent leak away.",
+      "Before releasing a fixed gas system, confirm the space is fully sealed: close all dampers, ventilation, skylights, funnel flaps and quick-closing valves per the boundary-closure checklist.",
+      "The engine room was unmanned although the ship was not certified for unattended machinery spaces; both watchkeepers were absent and the alarm went unheard, delaying detection and first response.",
+      "Fixed fire-extinguishing systems only work if the protected space is gas-tight and the agent quantity is intact \u2014 reinforces routine checks of detection, dampers and the fixed-system charge.",
+    ],
+    refs: "Britannia P&I BSAFE Incident Case Study No. 10 & Commentary (Aug 2021); ship FERNANDA.",
+    link: "https://britanniapandi.com/2021/08/bsafe-incident-case-study-10-engine-room-fire/",
+  },
+  {
+    id: "hkmd-nozzle-psc",
+    status: "active",
+    date: "03/02/2023",
+    flag: "Hong Kong",
+    source: "Hong Kong MD",
+    psc: false,
+    kind: "safety",
+    title: "PSC detainable deficiencies \u2014 blocked discharge nozzles of fixed fire-fighting systems",
+    media: ["water", "foam", "gas", "powder"],
+    effective: null,
+    summary: "Hong Kong Marine Department alert after a Hong Kong-registered ship was detained by the USCG because a number of fixed-system discharge nozzles were blocked, rendering the system not readily available for immediate use. Defective or clogged discharge nozzles have been a recurring detainable PSC deficiency.",
+    points: [
+      "SOLAS II-2/14.2.1.2 requires fire-fighting systems and appliances to be kept in good working order and readily available for immediate use.",
+      "Carry out onboard maintenance and inspection per the ship\u2019s maintenance plan and the IMO guidelines MSC.1/Circ.1432 (as amended by MSC.1/Circ.1516).",
+      "Thoroughly inspect fixed systems \u2014 including the cleanliness of discharge nozzles \u2014 before calling at any port, not only in the US.",
+      "If a defect cannot be rectified before arrival, notify the port authority, class and the flag Administration in advance; arrange rectification without delay or apply for dispensation.",
+    ],
+    refs: "Hong Kong Marine Department letter (3 Feb 2023); SOLAS II-2/14.2.1.2; MSC.1/Circ.1432 & 1516.",
+    link: "https://www.mardep.gov.hk/filemanager/en/share/faq/pdf/let230203.pdf",
+  },
+  {
+    id: "imo-fsi20-accom-fire",
+    status: "active",
+    date: "01/01/2012",
+    flag: "IMO / General",
+    source: "IMO",
+    psc: false,
+    kind: "safety",
+    title: "Lessons learned \u2014 crew-accommodation fires (IMO FSI 20)",
+    media: ["detection", "portable", "water", "structural", "ba", "lighting"],
+    effective: null,
+    summary: "IMO \u2018Lessons Learned for Seafarers\u2019 (FSI 20). Two very serious accommodation fires with fatalities: on an old cement carrier, wooden accommodation partitions and doors spread fire rapidly, with no EEBDs and unmarked escape routes; on a bulk carrier, a fire started from a portable cooking heater in a cabin, no fire alarm sounded, and portable extinguishers and hoses were found not working.",
+    points: [
+      "On older ships built to earlier SOLAS standards, combustible (wooden) accommodation construction can spread fire very rapidly \u2014 alert crews to the elevated risk.",
+      "Prohibit appliances that create a fire hazard in cabins (e.g. portable heaters/stoves used for cooking).",
+      "Carry out effective routine maintenance, inspection and testing of fire-fighting appliances \u2014 in one case extinguishers did not work and no water came from the hoses \u2014 plus regular drills.",
+      "Provide EEBDs and clearly mark escape routes with photoluminescent indicators; ensure fire alarms function and are heard.",
+      "Maintain effective ship-shore communication: in one case the master neither alerted the company nor sent distress signals, gravely delaying search and rescue.",
+    ],
+    refs: "IMO \u2018Lessons Learned for Presentation to Seafarers\u2019, FSI 20 (fire-safety cases 1 & 2). Other (non-fire) cases in the source are not included here.",
+    link: "https://wwwcdn.imo.org/localresources/en/OurWork/IIIS/Documents/Lessons%20learned%20English/j%20FSI%2020.pdf",
+  },
+
+  {
+    id: "gard-fire-overview",
+    status: "active",
+    date: "08/05/2022",
+    flag: "IMO / General",
+    source: "Gard",
+    psc: false,
+    kind: "safety",
+    title: "Fire safety onboard ships — a continuous cause for concern (Gard)",
+    media: ["detection", "water", "foam", "gas", "powder", "portable", "structural", "ba"],
+    effective: null,
+    summary: "Gard overview drawing on the USCG PSC Annual Report and Cefor casualty statistics: the same fire-safety deficiencies recur year after year, and the overall frequency of ship fires is not improving — most still originate in the engine room.",
+    points: [
+      "Recurring detainable deficiencies: fuel-oil leaks and oil-soaked lagging, disabled quick-closing valves, disconnected/defeated fire detectors, breached structural fire protection (fire doors, dampers, ducting), inoperable fixed systems (closed discharge valves, clogged nozzles), weak fire pumps, and depressurised portable extinguishers.",
+      "SOLAS II-2/14 requires fire-protection equipment to be kept in good order and ready for immediate use; SOLAS I/11 requires defects affecting safety to be reported to class and flag.",
+      "Risk is highest during and just after maintenance — missing hot-work permits, no fire watch, and insulation/spray shields left un-refitted.",
+      "Best prevention is a well-trained crew with shared understanding of engine-room fire hazards (ISM Code Ch.3, 6 & 10).",
+    ],
+    refs: "Gard Insight, 8 May 2022 (USCG PSC Annual Report 2021; Cefor/NoMIS 2021).",
+    link: "https://gard.no/en/insights/fire-safety-onboard-ships-continuous-cause-for-concern/",
+  },
+  {
+    id: "gard-cs-er-fire-ffsystems",
+    status: "active",
+    date: "01/05/2021",
+    flag: "IMO / General",
+    source: "Gard",
+    psc: false,
+    kind: "safety",
+    title: "Case study — engine-room fire and failure of fixed fire-fighting systems (Gard)",
+    media: ["gas", "water", "detection", "powder"],
+    effective: null,
+    summary: "Gard case study: on an ultra-large container ship, fuel from a fractured, locally-fabricated fuel pressure-sensing line sprayed onto unprotected hot surfaces of an auxiliary engine. The water mist system failed twice and the fixed CO₂ system largely failed to discharge.",
+    points: [
+      "Fire cause: a locally-fabricated fuel pressure line of inferior specification, poorly supported, cracked from vibration fatigue (the maker had issued service letters warning of this).",
+      "Water mist failed: auto-activation needed two flame detectors but only one tripped (the other was fogged by fuel mist), and the local control had been left in ‘manual’ after maintenance — the crew did not know how to override it.",
+      "Fixed CO₂ failed: of 397 cylinders only 170 discharged; new flexible pilot/discharge hoses fitted at the last service had a different connection profile and did not seal — leaks at all connections. A bottle-leakage alarm went unnoticed.",
+      "Reignition occurred when power/fuel was restored — confirm a fire is fully out and the space safe before restoring machinery; verify third-party-fitted parts match the original specification.",
+    ],
+    refs: "Gard case study (May 2021); ultra-large container ship.",
+    link: "https://assets.eu.ctfassets.net/jchk06tdml2i/adc2c3d7f06b4cb08d08d7d7c898b4cc/8e990ea057687be348ff3ed59141befc/Gard_20Case_20study_20-_20engine_20room_20fire_20and_20failure_20of_20fire_20fighting_20systems.pdf",
+  },
+  {
+    id: "gard-cs-er-fire-lubeoil",
+    status: "active",
+    date: "01/07/2016",
+    flag: "IMO / General",
+    source: "Gard",
+    psc: false,
+    kind: "safety",
+    title: "Case study — engine-room fire from a lube-oil filter failure (Gard)",
+    media: ["portable", "ba", "structural"],
+    effective: null,
+    summary: "Gard case study: on a bulk carrier, a sheared lube-oil filter cover bolt on a running auxiliary engine displaced the cover; pressurised lube oil sprayed onto hot surfaces and ignited. The crew sealed the space and extinguished it with portable/semi-portable extinguishers under SCBA.",
+    points: [
+      "A filter cover bolt sheared (improperly tightened; fittings can loosen from vibration) — regular inspection routines were lacking.",
+      "Lube-oil primer pumps kept running after engine shutdown because emergency power restored them, emptying the sump and feeding the fire.",
+      "Spray shields and extra bolt-securing arrangements were not fitted to the auxiliary-engine lube-oil pipes and filters.",
+      "Engine ratings were carrying out filter work unsupervised while officers were in a meeting — clear delegation and supervision matter; know all engine-room openings to close in a fire.",
+    ],
+    refs: "Gard case study (Jul 2016); bulk carrier.",
+    link: "https://assets.eu.ctfassets.net/jchk06tdml2i/527372bd447041659b9e6e1831da9b47/fae2f87edf8c4a171572ffe17b4ef2ae/Gard_20AS_20-_20Case_20study_20-_20engine_20room_20fire.pdf",
+  },
+  {
+    id: "gard-cs-co2-use",
+    status: "active",
+    date: "01/02/2018",
+    flag: "IMO / General",
+    source: "Gard",
+    psc: false,
+    kind: "safety",
+    title: "Case study — effective use of fixed CO₂ systems (Gard, from UK MAIB)",
+    media: ["gas"],
+    effective: null,
+    summary: "Gard case study based on a UK MAIB report: after an engine-room fire (a rubber coupling between main engine and shaft generator overheated), the crew released the fixed CO₂ system but the master kept the main engine and a generator running at slow speed — the machinery drew air from the space and consumed the CO₂, compromising the system.",
+    points: [
+      "A fixed gas system only works if the protected space is completely sealed and shut down — running machinery takes air from the space and consumes the agent, reducing effectiveness.",
+      "Before releasing CO₂: muster and headcount, stop main engine and machinery, shut fire flaps, vents and fuel pumps, and close all openings.",
+      "On re-entry after CO₂ flooding, beware reignition and backdraft, and check for hot spots; understand the CO₂ hazard to personnel.",
+      "Crew should understand the system’s limitations and feel able to question a senior officer when a response is unsafe.",
+    ],
+    refs: "Gard case study (Feb 2018), based on a UK MAIB report.",
+    link: "https://assets.eu.ctfassets.net/jchk06tdml2i/2cc9f95ea3b7442ab231d4736e740c59/fb9ab3094fd4ff20c2b99a3865e9cc47/Gard_20-_20Case_20study_20_20-_20use_20of_20fixed_20and_20portable_20fire_20extinguishers.pdf",
+  },
+  {
+    id: "gard-lpc-er-prevention",
+    status: "active",
+    date: "01/03/2012",
+    flag: "IMO / General",
+    source: "Gard",
+    psc: false,
+    kind: "safety",
+    title: "Loss Prevention Circular — fire prevention in engine rooms (Gard)",
+    media: ["structural"],
+    effective: null,
+    summary: "Gard Loss Prevention Circular No. 02-12: most ship fires start in the engine room, with flammable-oil leaks impinging on hot surfaces the leading cause. Identifying and protecting high-temperature surfaces is a highly effective, practical preventive measure.",
+    points: [
+      "Mandatory since July 2003 (SOLAS II-2/4): jacketed double pipes on HP fuel lines; insulation of hot surfaces above 220°C at risk of oil impingement; spray shields on fuel/lube/hydraulic oil lines near ignition sources.",
+      "Keep the engine room clean and deal with oil leaks promptly; regularly check spray-shield position/condition and jacketed-pipe drainage.",
+      "Insulation degrades — inspect visually and with infrared thermo-scanning (annually recommended) to find surfaces over 220°C.",
+      "Refit spray shields and insulation immediately after maintenance; consult IMO MSC.1/Circ.1321 for engine-room/pump-room fire-prevention integrity standards.",
+    ],
+    refs: "Gard Loss Prevention Circular No. 02-12 (Mar 2012); SOLAS II-2/4; MSC.1/Circ.1321.",
+    link: "https://assets.eu.ctfassets.net/jchk06tdml2i/28fcde8beedf4059894d2cec3deade8a/b885409cf7e10e38d5195e587ec5b2e4/Gard_20LPC_20Fire_20prevention_20in_20engine_20rooms.pdf",
   },
 ];
 
@@ -1643,12 +1961,7 @@ function readableText(hex) {
 }
 
 function ClassSocietyLookup({ online }) {
-  const [q, setQ] = useState("");
   const all = useMemo(() => sortedSocieties(), []);
-  const query = q.trim().toLowerCase();
-  const shown = query
-    ? all.filter(s => s.name.toLowerCase().includes(query) || s.abbr.toLowerCase().includes(query))
-    : all;
 
   return (
     <div className="css-lookup">
@@ -1657,15 +1970,8 @@ function ClassSocietyLookup({ online }) {
         Use these to confirm a supplier&rsquo;s approval scope and validity.
       </p>
 
-      <div className="alerts-search css-search">
-        <Search size={16} />
-        <input value={q} onChange={e => setQ(e.target.value)}
-          placeholder="Search society name or abbreviation — e.g. DNV, ClassNK, Bureau" aria-label="Search classification societies" />
-        {q && <button className="clr" onClick={() => setQ("")} aria-label="Clear search"><X size={15} /></button>}
-      </div>
-
       <div className="css-grid">
-        {shown.map(s => {
+        {all.map(s => {
           const card = (
             <>
               <span className="css-initials" aria-hidden="true"
@@ -1693,14 +1999,6 @@ function ClassSocietyLookup({ online }) {
           );
         })}
       </div>
-
-      {shown.length === 0 && (
-        <div className="alerts-empty">
-          <Search size={22} />
-          <p>No society matches.</p>
-          <button onClick={() => setQ("")}>Clear search</button>
-        </div>
-      )}
 
       <p className="css-note">
         <Info size={13} /> Users should always verify the latest approval validity directly from the respective Classification Society database.
@@ -1770,6 +2068,9 @@ function SafetyAlerts({ mediumLabel, online, targetId, onTargetConsumed }) {
   const [kindFilter, setKindFilter] = useState("all");   // all | regulation | safety | recommendation
   const [mediaFilter, setMediaFilter] = useState("all"); // all | <medium id>
   const [statusFilter, setStatusFilter] = useState("all"); // all | active | historical
+  const [flagFilter, setFlagFilter] = useState("all");   // all | <flag>
+  const [sourceFilter, setSourceFilter] = useState("all"); // all | <class society / body>
+  const [pscFilter, setPscFilter] = useState("all");     // all | psc
   const [order, setOrder] = useState("desc");            // desc = newest first | asc = oldest first
 
   // Distinct media present across advisories, for the system filter dropdown.
@@ -1779,6 +2080,27 @@ function SafetyAlerts({ mediumLabel, online, targetId, onTargetConsumed }) {
     return [...set];
   }, []);
 
+  // Distinct flags and issuing bodies, for their filter dropdowns.
+  // "IMO / General" is sorted last so specific flags lead the list.
+  const flagsInUse = useMemo(() => {
+    const set = new Set(SAFETY_ADVISORIES.map(a => a.flag).filter(Boolean));
+    const arr = [...set].filter(f => f !== "IMO / General").sort((a, b) => a.localeCompare(b));
+    if (set.has("IMO / General")) arr.push("IMO / General");
+    return arr;
+  }, []);
+  const sourcesInUse = useMemo(() => {
+    const set = new Set(SAFETY_ADVISORIES.map(a => a.source).filter(Boolean));
+    const rest = [...set].filter(s => s !== "LR").sort((a, b) => a.localeCompare(b));
+    return set.has("LR") ? ["LR", ...rest] : rest;   // LR pinned first
+  }, []);
+  // Distinct Port State Control MoUs across the PSC alerts, for the PSC filter.
+  const mousInUse = useMemo(() => {
+    const set = new Set();
+    SAFETY_ADVISORIES.forEach(a => (a.mou || []).forEach(m => set.add(m)));
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, []);
+  const pscCount = useMemo(() => SAFETY_ADVISORIES.filter(a => a.psc).length, []);
+
   // Filter + search, then sort chronologically by release date.
   const shown = useMemo(() => {
     const query = q.trim().toLowerCase();
@@ -1786,6 +2108,9 @@ function SafetyAlerts({ mediumLabel, online, targetId, onTargetConsumed }) {
       if (kindFilter !== "all" && a.kind !== kindFilter) return false;
       if (statusFilter !== "all" && (a.status || "active") !== statusFilter) return false;
       if (mediaFilter !== "all" && !a.media.includes(mediaFilter)) return false;
+      if (flagFilter !== "all" && a.flag !== flagFilter) return false;
+      if (sourceFilter !== "all" && a.source !== sourceFilter) return false;
+      if (pscFilter !== "all" && !(a.mou || []).includes(pscFilter)) return false;
       if (query) {
         const hay = [a.title, a.summary, a.refs, ...(a.points || [])].join(" ").toLowerCase();
         if (!hay.includes(query)) return false;
@@ -1798,13 +2123,13 @@ function SafetyAlerts({ mediumLabel, online, targetId, onTargetConsumed }) {
       return order === "desc" ? dy - dx : dx - dy;
     });
     return list;
-  }, [q, kindFilter, mediaFilter, statusFilter, order]);
+  }, [q, kindFilter, mediaFilter, statusFilter, flagFilter, sourceFilter, pscFilter, order]);
 
   // When arriving from a Reference inline marker, clear filters, then scroll to
   // and briefly highlight the targeted alert.
   useEffect(() => {
     if (!targetId) return;
-    setQ(""); setKindFilter("all"); setMediaFilter("all"); setStatusFilter("all");
+    setQ(""); setKindFilter("all"); setMediaFilter("all"); setStatusFilter("all"); setFlagFilter("all"); setSourceFilter("all"); setPscFilter("all");
     const t = setTimeout(() => {
       const el = document.getElementById("alert-" + targetId);
       if (el) {
@@ -1822,6 +2147,16 @@ function SafetyAlerts({ mediumLabel, online, targetId, onTargetConsumed }) {
     SAFETY_ADVISORIES.forEach(a => { c[a.kind] = (c[a.kind] || 0) + 1; });
     return c;
   }, []);
+
+  // Active filter count + one-click reset (mirrors the Reference tab).
+  const activeFilterCount =
+    (q.trim() ? 1 : 0) + (kindFilter !== "all" ? 1 : 0) + (mediaFilter !== "all" ? 1 : 0) +
+    (statusFilter !== "all" ? 1 : 0) + (flagFilter !== "all" ? 1 : 0) +
+    (sourceFilter !== "all" ? 1 : 0) + (pscFilter !== "all" ? 1 : 0);
+  const clearFilters = () => {
+    setQ(""); setKindFilter("all"); setMediaFilter("all"); setStatusFilter("all");
+    setFlagFilter("all"); setSourceFilter("all"); setPscFilter("all");
+  };
 
   return (
     <div className="alerts">
@@ -1865,12 +2200,38 @@ function SafetyAlerts({ mediumLabel, online, targetId, onTargetConsumed }) {
           </select>
         </div>
         <div className="af-row">
+          <span className="af-lbl"><Flag size={12} /> Flag</span>
+          <select value={flagFilter} onChange={e => setFlagFilter(e.target.value)}>
+            <option value="all">All flags</option>
+            {flagsInUse.map(f => <option key={f} value={f}>{f}</option>)}
+          </select>
+        </div>
+        <div className="af-row">
+          <span className="af-lbl"><Building2 size={12} /> Source</span>
+          <select value={sourceFilter} onChange={e => setSourceFilter(e.target.value)}>
+            <option value="all">All sources</option>
+            {sourcesInUse.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        {mousInUse.length > 0 && (
+          <div className="af-row">
+            <span className="af-lbl"><ShieldAlert size={12} /> PSC MoU</span>
+            <select value={pscFilter} onChange={e => setPscFilter(e.target.value)}>
+              <option value="all">All</option>
+              {mousInUse.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+        )}
+        <div className="af-row">
           <span className="af-lbl"><ArrowUpDown size={12} /> Order</span>
           <select value={order} onChange={e => setOrder(e.target.value)}>
             <option value="desc">Newest first</option>
             <option value="asc">Oldest first</option>
           </select>
         </div>
+        {activeFilterCount > 0 && (
+          <button className="clear-all" onClick={clearFilters}><X size={13} /> Clear ({activeFilterCount})</button>
+        )}
       </div>
 
       <div className="alerts-count">{shown.length} {shown.length === 1 ? "alert" : "alerts"}</div>
@@ -1879,7 +2240,7 @@ function SafetyAlerts({ mediumLabel, online, targetId, onTargetConsumed }) {
         <div className="alerts-empty">
           <Search size={22} />
           <p>No alerts match.</p>
-          <button onClick={() => { setQ(""); setKindFilter("all"); setMediaFilter("all"); setStatusFilter("all"); }}>Clear filters</button>
+          <button onClick={clearFilters}>Clear filters</button>
         </div>
       )}
 
@@ -1898,6 +2259,11 @@ function SafetyAlerts({ mediumLabel, online, targetId, onTargetConsumed }) {
               <span className="alert-status" style={{ color: sm.color, background: sm.bg, borderColor: sm.bd }}>{sm.label}</span>
             </div>
             <div className="alert-media">
+              {a.source && <span className="alert-meta-chip alert-chip-source"><Building2 size={10} /> {a.source}</span>}
+              {a.flag && a.flag !== "IMO / General" && <span className="alert-meta-chip alert-chip-flag"><Flag size={10} /> {a.flag}</span>}
+              {a.psc && (a.mou && a.mou.length
+                ? a.mou.map(m => <span key={m} className="alert-meta-chip alert-chip-psc"><ShieldAlert size={10} /> {m}</span>)
+                : <span className="alert-meta-chip alert-chip-psc"><ShieldAlert size={10} /> PSC</span>)}
               {a.media.map(m => <span key={m} className="alert-tag">{mediumLabel(m)}</span>)}
             </div>
             <p className="alert-summary">{a.summary}</p>
@@ -2067,7 +2433,7 @@ function SurveyPlanner({ mediumLabel, online, onOpenSuppliers }) {
                             <span className="pl-src">{r.item.src}</span>
                             {r.item.requiresApprovedSupplier && (
                               <button className="pl-supbadge pl-supbadge-link" onClick={onOpenSuppliers}
-                                title="This item normally requires attendance by an approved service supplier. Click to open Approved Supplier Search.">
+                                title="This item normally requires attendance by an approved service supplier. Click to open Approved Service Supplier.">
                                 Approved Service Supplier <ExternalLink size={9} />
                               </button>
                             )}
@@ -2133,6 +2499,7 @@ export default function App() {
   const [online, setOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
   const [view, setView] = useState("reference"); // 'reference' | 'planner' | 'alerts'
   const [targetAlert, setTargetAlert] = useState(null); // alert id to scroll to when entering Alerts
+  const [dark, setDark] = useState(false); // dark mode toggle
   const searchRef = useRef(null);
 
   // Track connectivity so the approved-firm link can disable gracefully offline.
@@ -2211,7 +2578,7 @@ export default function App() {
   const clearAll = () => { setMedium("all"); setIntervalSel("all"); setFlag("imo"); setQuery(""); };
 
   return (
-    <div className="app">
+    <div className={`app${dark ? " dark" : ""}`}>
       <style>{CSS}</style>
 
       <header className="hdr">
@@ -2220,7 +2587,14 @@ export default function App() {
             <span className="reg">SOLAS II-2/14.2.2</span>
             <h1>Fire Protection &mdash; Maintenance, Testing &amp; Inspection Reference</h1>
           </div>
-          <span className="hdr-count">{TASKS.length} items &middot; {FLAGS.length - 1} flags &middot; <span className="hdr-ver" title={`Build ${BUILD_DATE}\n${CHANGELOG[0].note}`}>v{VERSION}</span></span>
+          <div className="hdr-right">
+            <button className="theme-toggle" onClick={() => setDark(d => !d)}
+              title={dark ? "Switch to light mode" : "Switch to dark mode"}
+              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}>
+              {dark ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+            <span className="hdr-count">{TASKS.length} items &middot; {FLAGS.length - 1} flags &middot; <span className="hdr-ver" title={`Build ${BUILD_DATE}\n${CHANGELOG[0].note}`}>v{VERSION}</span></span>
+          </div>
         </div>
 
         {/* view toggle: reference browser vs survey planner */}
@@ -2232,7 +2606,7 @@ export default function App() {
             <ShieldAlert size={14} /> Alerts
           </button>
           <button className={view === "suppliers" ? "on" : ""} onClick={() => setView("suppliers")}>
-            <Building2 size={14} /> Approved Supplier Search
+            <Building2 size={14} /> Approved Service Supplier
           </button>
           <button className={view === "planner" ? "on" : ""} onClick={() => setView("planner")}>
             <CalendarClock size={14} /> Inspection Planner
@@ -2523,15 +2897,27 @@ const CSS = `
     --ink:#1a2230; --ink-2:#4a5568; --ink-3:#718096; --line:#e2e8f0; --line-2:#edf2f7;
     --bg:#f7f9fb; --paper:#ffffff; --accent:#1e3a5f; --accent-2:#2c5282;
     --hl:#fef08a;
+    --chip-bg:#ebf2fa; --tab-bg:#eef2f7; --tab-on:#ffffff; --shadow:rgba(26,34,48,.1);
+  }
+  /* Dark mode: override the core tokens. Kept calm and low-glare for night
+     bridge use. Accent shifts to a brighter teal/blue for contrast on dark. */
+  .app.dark{
+    --ink:#e6edf3; --ink-2:#aebacb; --ink-3:#8593a8; --line:#2b3645; --line-2:#222c38;
+    --bg:#0e151f; --paper:#161f2b; --accent:#7fb0e6; --accent-2:#6aa3e0;
+    --hl:#7a6a1f;
+    --chip-bg:#1d2a3d; --tab-bg:#1a2433; --tab-on:#22304a; --shadow:rgba(0,0,0,.45);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  .app{font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh}
+  .app{font-family:'IBM Plex Sans',system-ui,sans-serif;color:var(--ink);background:var(--bg);min-height:100vh;transition:background .2s,color .2s}
   mark{background:var(--hl);color:inherit;border-radius:2px;padding:0 1px}
+  .hdr-right{display:flex;align-items:center;gap:14px}
+  .theme-toggle{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink-2);cursor:pointer;transition:.15s;flex-shrink:0}
+  .theme-toggle:hover{color:var(--accent-2);border-color:var(--accent-2)}
 
   /* HEADER */
   .hdr{position:sticky;top:0;z-index:10;background:var(--paper);border-bottom:1px solid var(--line);padding:16px 24px 14px;box-shadow:0 1px 3px rgba(26,34,48,.04)}
   .hdr-top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:13px;flex-wrap:wrap}
-  .reg{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--accent-2);background:#ebf2fa;padding:2px 8px;border-radius:4px;letter-spacing:.02em;margin-bottom:6px}
+  .reg{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--accent-2);background:var(--chip-bg);padding:2px 8px;border-radius:4px;letter-spacing:.02em;margin-bottom:6px}
   .hdr-id h1{font-size:18px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
   .hdr-count{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--ink-3);white-space:nowrap}
   .hdr-ver{color:var(--accent-2);font-weight:600;cursor:help}
@@ -2539,7 +2925,7 @@ const CSS = `
   /* view toggle tabs */
   .viewtabs{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;margin-bottom:12px;width:fit-content}
   .viewtabs button{display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink-2);background:0;border:0;border-radius:7px;padding:7px 14px;cursor:pointer;transition:.15s}
-  .viewtabs button.on{background:#fff;color:var(--accent-2);box-shadow:0 1px 3px rgba(26,34,48,.1)}
+  .viewtabs button.on{background:var(--tab-on);color:var(--accent-2);box-shadow:0 1px 3px rgba(26,34,48,.1)}
   .viewtabs button:hover:not(.on){color:var(--ink)}
   .tab-count{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;background:#dc2626;color:#fff;border-radius:20px;padding:1px 6px;margin-left:2px}
 
@@ -2558,9 +2944,14 @@ const CSS = `
   .alert-status{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 9px;border-radius:20px;border:1px solid;white-space:nowrap}
   .alert-date{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--ink-3);background:var(--bg);border:1px solid var(--line);padding:3px 9px;border-radius:6px;white-space:nowrap}
   .alert-flash{animation:alertFlash 2s ease-out}
-  @keyframes alertFlash{0%{box-shadow:0 0 0 3px var(--accent-2);background:#ebf2fa}60%{box-shadow:0 0 0 3px var(--accent-2);background:#ebf2fa}100%{box-shadow:none}}
+  @keyframes alertFlash{0%{box-shadow:0 0 0 3px var(--accent-2);background:var(--chip-bg)}60%{box-shadow:0 0 0 3px var(--accent-2);background:var(--chip-bg)}100%{box-shadow:none}}
   .alert-media{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}
   .alert-tag{font-size:10.5px;font-weight:600;color:var(--ink-2);background:var(--bg);border:1px solid var(--line);padding:2px 9px;border-radius:5px}
+  .alert-meta-chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:600;padding:2px 9px;border-radius:5px;border:1px solid}
+  .alert-meta-chip svg{flex-shrink:0}
+  .alert-chip-source{color:#1e40af;background:#eff6ff;border-color:#bfdbfe}
+  .alert-chip-flag{color:#9a3412;background:#fff7ed;border-color:#fed7aa}
+  .alert-chip-psc{color:#7c2d12;background:#fef2f2;border-color:#fecaca}
   .alert-summary{font-size:13.5px;line-height:1.55;color:var(--ink);margin-bottom:11px}
   .alert-points{list-style:none;margin:0 0 13px;padding:0;display:flex;flex-direction:column;gap:7px}
   .alert-points li{position:relative;padding-left:18px;font-size:12.5px;line-height:1.5;color:var(--ink-2)}
@@ -2596,7 +2987,6 @@ const CSS = `
   /* Approved Service Supplier Lookup */
   .css-lookup{max-width:900px}
   .css-intro{font-size:13px;line-height:1.55;color:var(--ink-2);margin-bottom:16px;max-width:620px}
-  .css-search{max-width:520px;margin-bottom:18px}
   .css-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
   .css-card{display:flex;align-items:center;gap:13px;text-decoration:none;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:.15s;position:relative}
   .css-card:hover{border-color:var(--accent-2);box-shadow:0 3px 12px rgba(26,34,48,.09);transform:translateY(-1px)}
@@ -2619,7 +3009,7 @@ const CSS = `
   @media(max-width:680px){
     .css-grid{grid-template-columns:1fr}
   }
-  .alerts-search:focus-within{border-color:var(--accent-2);background:#fff;box-shadow:0 0 0 3px rgba(44,82,130,.1)}
+  .alerts-search:focus-within{border-color:var(--accent-2);background:var(--paper);box-shadow:0 0 0 3px rgba(44,82,130,.1)}
   .alerts-search svg{color:var(--ink-3);flex-shrink:0}
   .alerts-search input{flex:1;border:0;background:0;font-family:inherit;font-size:14px;color:var(--ink);height:100%}
   .alerts-search input:focus{outline:0}
@@ -2631,7 +3021,7 @@ const CSS = `
   .alerts-count{font-size:12.5px;color:var(--ink-3);margin-bottom:14px;font-family:'IBM Plex Mono',monospace}
   .alerts-empty{display:flex;flex-direction:column;align-items:center;gap:9px;padding:40px;color:var(--ink-3)}
   .alerts-empty p{font-size:15px;font-weight:600;color:var(--ink-2)}
-  .alerts-empty button{font-family:inherit;font-size:13px;font-weight:600;color:var(--accent-2);background:#ebf2fa;border:1px solid #d4e2f0;border-radius:8px;padding:8px 16px;cursor:pointer}
+  .alerts-empty button{font-family:inherit;font-size:13px;font-weight:600;color:var(--accent-2);background:var(--chip-bg);border:1px solid #d4e2f0;border-radius:8px;padding:8px 16px;cursor:pointer}
   .alert-recommendation{border-left:4px solid #0e7490}
   .alert-badge-recommendation{background:#ecfeff;color:#0e7490}
 
@@ -2642,7 +3032,7 @@ const CSS = `
   .pl-field label{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)}
   .pl-field input{font-family:inherit;font-size:14px;color:var(--ink);background:var(--paper);border:1.5px solid var(--line);border-radius:9px;padding:9px 12px}
   .pl-field input:focus{outline:0;border-color:var(--accent-2);box-shadow:0 0 0 3px rgba(44,82,130,.1)}
-  .pl-age{display:flex;flex-direction:column;gap:1px;background:#ebf2fa;border:1px solid #d4e2f0;border-radius:9px;padding:8px 16px}
+  .pl-age{display:flex;flex-direction:column;gap:1px;background:var(--chip-bg);border:1px solid #d4e2f0;border-radius:9px;padding:8px 16px}
   .pl-age-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-3)}
   .pl-age strong{font-size:18px;font-family:'IBM Plex Mono',monospace;color:var(--accent-2)}
   .pl-age-built{font-size:11px;color:var(--ink-3)}
@@ -2690,14 +3080,14 @@ const CSS = `
   .pl-detail-note strong{color:var(--ink)}
   .pl-detail-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
   .pl-act{display:inline-flex;align-items:center;gap:6px;font-family:inherit;font-size:12px;font-weight:600;color:var(--accent-2);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer;text-decoration:none;transition:.12s}
-  .pl-act:hover{border-color:var(--accent-2);background:#ebf2fa}
+  .pl-act:hover{border-color:var(--accent-2);background:var(--chip-bg)}
   .pl-act-primary{color:#fff;background:#04AA9E;border-color:#04AA9E}
   .pl-act-primary:hover{background:#038a80;border-color:#038a80}
   .pl-act-off{color:var(--ink-3);background:#eef0f2;cursor:not-allowed}
   .pl-act-off:hover{border-color:var(--line);background:#eef0f2}
   .rb-spacer{flex:1}
   .rb-lr{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--accent-2);text-decoration:none;border:1px solid var(--line);border-radius:8px;padding:6px 11px;transition:.12s;white-space:nowrap}
-  .rb-lr:hover{border-color:var(--accent-2);background:#ebf2fa}
+  .rb-lr:hover{border-color:var(--accent-2);background:var(--chip-bg)}
   .rb-lr-off{color:var(--ink-3);border-color:var(--line);cursor:not-allowed}
   @media(max-width:680px){
     .rb-spacer{display:none}
@@ -2728,7 +3118,7 @@ const CSS = `
 
   .searchbar-wrap{position:relative;margin-bottom:12px;z-index:20}
   .searchbar{display:flex;align-items:center;gap:10px;background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:0 12px;height:44px;transition:.15s}
-  .searchbar:focus-within{border-color:var(--accent-2);background:#fff;box-shadow:0 0 0 3px rgba(44,82,130,.1)}
+  .searchbar:focus-within{border-color:var(--accent-2);background:var(--paper);box-shadow:0 0 0 3px rgba(44,82,130,.1)}
   .searchbar svg{color:var(--ink-3);flex-shrink:0}
   .searchbar input{flex:1;border:0;background:0;font-family:inherit;font-size:14.5px;color:var(--ink);height:100%}
   .searchbar input:focus{outline:0}
@@ -2807,7 +3197,7 @@ const CSS = `
 
   .empty{display:flex;flex-direction:column;align-items:center;gap:10px;padding:50px;color:var(--ink-3)}
   .empty p{font-size:15px;font-weight:600;color:var(--ink-2)}
-  .empty button{font-family:inherit;font-size:13px;font-weight:600;color:var(--accent-2);background:#ebf2fa;border:1px solid #d4e2f0;border-radius:8px;padding:8px 16px;cursor:pointer}
+  .empty button{font-family:inherit;font-size:13px;font-weight:600;color:var(--accent-2);background:var(--chip-bg);border:1px solid #d4e2f0;border-radius:8px;padding:8px 16px;cursor:pointer}
 
   /* smart-search suggestions dropdown */
   .suggest{position:absolute;top:48px;left:0;right:0;background:#fff;border:1.5px solid var(--line);border-radius:11px;box-shadow:0 12px 32px rgba(26,34,48,.14);padding:6px;max-height:340px;overflow-y:auto;animation:sg .12s ease}
@@ -2818,17 +3208,17 @@ const CSS = `
   .suggest-i:hover,.suggest-i.on{background:var(--bg)}
   .suggest-i.on{box-shadow:inset 2px 0 0 var(--accent-2)}
   .suggest-empty{font-size:13px;color:var(--ink-3);padding:12px 10px}
-  .rb-rank{font-size:11.5px;font-weight:600;color:var(--accent-2);background:#ebf2fa;padding:3px 9px;border-radius:20px}
+  .rb-rank{font-size:11.5px;font-weight:600;color:var(--accent-2);background:var(--chip-bg);padding:3px 9px;border-radius:20px}
   .empty-sub{font-size:13px;color:var(--ink-2);margin-top:4px}
   .empty-chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:6px;max-width:480px}
   .empty-chip{font-family:inherit;font-size:12.5px;font-weight:500;color:var(--accent-2);background:#fff;border:1.5px solid #d4e2f0;border-radius:20px;padding:7px 14px;cursor:pointer;transition:.12s}
-  .empty-chip:hover{background:#ebf2fa;border-color:var(--accent-2)}
+  .empty-chip:hover{background:var(--chip-bg);border-color:var(--accent-2)}
   .empty-clear{margin-top:6px}
 
   .ftr{margin-top:36px;padding-top:20px;border-top:1px solid var(--line)}
   .ftr-srcs h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);margin-bottom:9px}
   .ftr-srcs p{font-size:11.5px;line-height:1.7;color:var(--ink-2)}
-  .ftr-srcs code{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent-2);background:#ebf2fa;padding:1px 6px;border-radius:4px;margin-right:5px}
+  .ftr-srcs code{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent-2);background:var(--chip-bg);padding:1px 6px;border-radius:4px;margin-right:5px}
   .src-link{color:var(--accent-2);text-decoration:none;font-weight:600;white-space:nowrap}
   .src-code-link{text-decoration:none}
   .src-code-link code{cursor:pointer}
@@ -2844,7 +3234,7 @@ const CSS = `
   .ftr-ver[open] summary::before{transform:rotate(90deg)}
   .ftr-ver ul{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
   .ftr-ver li{font-size:11.5px;line-height:1.5;color:var(--ink-2);padding-left:2px}
-  .ftr-ver code{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent-2);background:#ebf2fa;padding:1px 6px;border-radius:4px;margin-right:6px}
+  .ftr-ver code{font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent-2);background:var(--chip-bg);padding:1px 6px;border-radius:4px;margin-right:6px}
   .dev-credit{margin-top:16px;padding-top:14px;border-top:1px solid var(--line-2)}
   .copyright-line{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:3px}
   .copyright-sub{font-size:11px;line-height:1.55;color:var(--ink-3);max-width:560px;margin-bottom:8px}
